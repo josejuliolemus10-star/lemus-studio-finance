@@ -1,0 +1,56 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    background-color: #06141B;
+    color: #CCD0CF;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #06141B;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #253745;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #364d5f;
+}
+
+/* Glass & Card effects */
+.dashboard-card {
+  background-color: #11212D;
+  border: 1px solid #253745;
+  border-radius: 1.25rem;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dashboard-card:hover {
+  border-color: rgba(155, 168, 171, 0.35);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+}
+
+/* Metallic Credit Card Sheen */
+.bac-card-gradient {
+  background: radial-gradient(circle at 100% 0%, rgba(227, 24, 55, 0.25) 0%, transparent 60%),
+              radial-gradient(circle at 0% 100%, rgba(37, 55, 69, 0.45) 0%, transparent 70%),
+              linear-gradient(135deg, #11212D 0%, #0d1a24 50%, #071017 100%);
+}
+
+/* Space Grotesk font class for numbers */
+.font-numeric {
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  letter-spacing: -0.02em;
+}

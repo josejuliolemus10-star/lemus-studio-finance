@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lemus Studio — Private Financial Dashboard (100% Funcional)</title>
+  
+  <!-- Fonts: Inter & Space Grotesk -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS Play CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            deepNavy: '#06141B',
+            darkSlate: '#11212D',
+            borderMuted: '#253745',
+            textPrimary: '#CCD0CF',
+            textSecondary: '#9BA8AB',
+            brandCyan: '#00E5FF',
+            brandTeal: '#2DD4BF',
+            brandFuchsia: '#D946EF',
+            brandRose: '#F43F5E',
+            bacRed: '#E31837',
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            display: ['"Space Grotesk"', 'sans-serif'],
+            mono: ['"Space Grotesk"', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      background-color: #06141B;
+      color: #CCD0CF;
+      font-family: 'Inter', system-ui, sans-serif;
+    }
+    .font-numeric {
+      font-family: 'Space Grotesk', system-ui, sans-serif;
+      letter-spacing: -0.02em;
+    }
+    .dashboard-card {
+      background-color: #11212D;
+      border: 1px solid #253745;
+      border-radius: 1.25rem;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .dashboard-card:hover {
+      border-color: rgba(155, 168, 171, 0.35);
+      box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+    }
+    .bac-card-gradient {
+      background: radial-gradient(circle at 100% 0%, rgba(227, 24, 55, 0.25) 0%, transparent 60%),
+                  radial-gradient(circle at 0% 100%, rgba(37, 55, 69, 0.45) 0%, transparent 70%),
+                  linear-gradient(135deg, #11212D 0%, #0d1a24 50%, #071017 100%);
+    }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #06141B; }
+    ::-webkit-scrollbar-thumb { background: #253745; border-radius: 9999px; }
+  </style>
+
+  <!-- React & Babel for Standalone Browser Execution -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body class="bg-[#06141B] text-[#CCD0CF] antialiased selection:bg-[#253745] selection:text-white min-h-screen">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useMemo } = React;
+
+    const formatGTQ = (amount) => {
+      const num = Number(amount) || 0;
+      return 'Q ' + num.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    };
+
+    const formatDate = (dateStr) => {
+      if (!dateStr) return 'Sin fecha';
+      const parts = dateStr.split('-');
+      if (parts.length === 3) {
+        const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+        return `${parseInt(parts[2], 10)} ${months[parseInt(parts[1], 10) - 1] || ''} ${parts[0]}`;
+      }
+      return dateStr;
+    };
+
+    function App() {
+      const STORAGE_KEY = 'lemus_studio_finance_v3';
+
+      // 100% Inicializado de Cero
+      const [transactions, setTransactions] = useState(() => {
+        const saved = localStorage.getItem(STORAGE_KEY + '_tx');
+        return saved ? JSON.parse(saved) : []; // 0 gastos e ingresos
+      });
+
+      const [clients, setClients] = useState(() => {
+        const saved = localStorage.getItem(STORAGE_KEY + '_clients');
+        return saved ? JSON.parse(saved) : [
+          { id: 'cli-1', nombre: 'Lic. Fernando Santander', empresa: 'Inmobiliaria Santander', contacto: 'fsantander@santander.gt', estado: 'Cerrado' },
+          { id: 'cli-2', nombre: 'Ana Lucía Morales', empresa: 'Café Despierto Guatemala', contacto: '+502 5543-9821', estado: 'En proceso' },
+          { id: 'cli-3', nombre: 'Dr. Alejandro Méndez', empresa: 'Hospital Los Arcos', contacto: 'amendez@losarcos.gt', estado: 'Contactado' }
+        ];
+      });
+
+      const [projects, setProjects] = useState(() => {
+        const saved = localStorage.getItem(STORAGE_KEY + '_projects');
+        return saved ? JSON.parse(saved) : []; // 0 proyectos iniciales
+      });
+
+      const [toasts, setToasts] = useState([]);
+      const [activeTab, setActiveTab] = useState('dashboard');
+      const [clientFilterStatus, setClientFilterStatus] = useState('Todos');
+      const [searchQuery, setSearchQuery] = useState('');
+      const [showCardNumber, setShowCardNumber] = useState(false);
+
+      // Modales
+      const [modalTxOpen, setModalTxOpen] = useState(false);
+      const [modalProjOpen, setModalProjOpen] = useState(false);
+      const [modalClientOpen, setModalClientOpen] = useState(false);
+      const [modalEditProgOpen, setModalEditProgOpen] = useState(false);
+      const [selectedProj, setSelectedProj] = useState(null);
+
+      // Sincronización LocalStorage
+      useEffect(() => {
+        localStorage.setItem(STORAGE_KEY + '_tx', JSON.stringify(transactions));
+      }, [transactions]);
+
+      useEffect(() => {
+        localStorage.setItem(STORAGE_KEY + '_clients', JSON.stringify(clients));
+      }, [clients]);
+
+      useEffect(() => {
+        localStorage.setItem(STORAGE_KEY + '_projects', JSON.stringify(projects));
+      }, [projects]);
+
+      const addToast = (message) => {
+        const id = Date.now();
+        setToasts((prev) => [...prev, { id, message }]);
+        setTimeout(() => {
+          setToasts((prev) => prev.filter((t) => t.id !== id));
+        }, 3500);
+      };
+
+      // Cálculos Financieros: ¡Tarjeta BAC Inicia estrictamente en 0.00!
+      const totalIncome = useMemo(() => {
+        return transactions.filter(t => t.tipo === 'ingreso').reduce((sum, t) => sum + Number(t.monto), 0);
+      }, [transactions]);
+
+      const totalExpenses = useMemo(() => {
+        return transactions.filter(t => t.tipo === 'gasto').reduce((sum, t) => sum + Number(t.monto), 0);
+      }, [transactions]);
+
+      const netProfit = totalIncome - totalExpenses;
+      // Saldo base 0.00: Card starts at Q 0.00!
+      const bacBalance = 0.00 + netProfit;
+
+      // Acciones
+      const handleAddTx = (data) => {
+        const newTx = { id: 'tx-' + Date.now(), ...data };
+        setTransactions([newTx, ...transactions]);
+        addToast(`✅ ${data.tipo === 'ingreso' ? 'Ingreso' : 'Gasto'} de ${formatGTQ(data.monto)} registrado`);
+        setModalTxOpen(false);
+      };
+
+      const handleDeleteTx = (id) => {
+        setTransactions(transactions.filter(t => t.id !== id));
+        addToast(`🗑️ Movimiento eliminado`);
+      };
+
+      const handleAddProj = (data) => {
+        const newProj = { id: 'proj-' + Date.now(), ...data };
+        setProjects([newProj, ...projects]);
+        addToast(`🚀 Proyecto "${data.nombre}" creado exitosamente`);
+        setModalProjOpen(false);
+      };
+
+      const handleDeleteProj = (id) => {
+        if (confirm('¿Estás seguro de que deseas eliminar este proyecto?')) {
+          setProjects(projects.filter(p => p.id !== id));
+          addToast(`🗑️ Proyecto eliminado`);
+          setModalEditProgOpen(false);
+        }
+      };
+
+      const handleUpdateProgress = (id, progreso, estado) => {
+        setProjects(projects.map(p => p.id === id ? { ...p, progreso, estado } : p));
+        addToast(`✨ Progreso actualizado al ${progreso}%`);
+        setModalEditProgOpen(false);
+      };
+
+      const handleAddClient = (data) => {
+        const newClient = { id: 'cli-' + Date.now(), ...data };
+        setClients([newClient, ...clients]);
+        addToast(`👤 Cliente "${data.empresa || data.nombre}" guardado como [${data.estado}]`);
+        setModalClientOpen(false);
+      };
+
+      const handleUpdateClientStatus = (id, newStatus) => {
+        setClients(clients.map(c => c.id === id ? { ...c, estado: newStatus } : c));
+        addToast(`🔄 Estado de cliente actualizado a "${newStatus}"`);
+      };
+
+      const handleDeleteClient = (id) => {
+        if (confirm('¿Eliminar este cliente?')) {
+          setClients(clients.filter(c => c.id !== id));
+          addToast('🗑️ Cliente eliminado');
+        }
+      };
+
+      // Clientes filtrados por estado del pipeline
+      const filteredClients = useMemo(() => {
+        if (clientFilterStatus === 'Todos') return clients;
+        return clients.filter(c => c.estado === clientFilterStatus);
+      }, [clients, clientFilterStatus]);
+
+      return (
+        <div className="min-h-screen bg-[#06141B] text-[#CCD0CF] flex antialiased">
+          {/* TOASTS */}
+          <div className="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none">
+            {toasts.map(t => (
+              <div key={t.id} className="pointer-events-auto bg-[#11212D] border border-emerald-500/40 p-3 rounded-xl shadow-2xl text-xs text-white">
+                {t.message}
+              </div>
+            ))}
+          </div>
+
+          {/* SIDEBAR */}
+          <aside className="hidden lg:flex flex-col justify-between w-64 bg-[#11212D] border-r border-[#253745] p-5 sticky top-0 h-screen">
+            <div className="space-y-8">
+              <div className="flex items-center gap-3 pb-4 border-b border-[#253745]">
+                <div className="w-9 h-9 rounded-xl bg-black border border-[#253745] flex items-center justify-center p-1 font-bold text-white">LS</div>
+                <div>
+                  <span className="text-base font-bold text-white font-display block">Lemus Studio</span>
+                  <span className="text-[10px] uppercase tracking-widest text-[#9BA8AB]">Financial Suite</span>
+                </div>
+              </div>
+
+              <nav className="space-y-1.5 text-xs font-medium">
+                {[
+                  { id: 'dashboard', label: 'Dashboard' },
+                  { id: 'proyectos', label: `Proyectos (${projects.length})` },
+                  { id: 'clientes', label: `Clientes CRM (${clients.length})` },
+                  { id: 'configuracion', label: 'Configuración' }
+                ].map(item => (
+                  <button
+                    key={item.id}
+                    onClick={() => setActiveTab(item.id)}
+                    className={`w-full text-left px-3.5 py-2.5 rounded-xl transition-all ${activeTab === item.id ? 'bg-[#253745] text-[#00E5FF] font-semibold' : 'text-[#9BA8AB] hover:text-white'}`}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </nav>
+            </div>
+
+            <div className="pt-4 border-t border-[#253745] text-xs space-y-2">
+              <button
+                onClick={() => setModalTxOpen(true)}
+                className="w-full py-2 rounded-xl bg-[#00E5FF] text-[#06141B] font-bold shadow-md hover:bg-[#00E5FF]/90"
+              >
+                + Registrar Movimiento
+              </button>
+              <div className="text-[10px] text-[#9BA8AB] text-center font-mono">Lemus Cloud • Saldo Q 0.00 Inicial</div>
+            </div>
+          </aside>
+
+          {/* MAIN CONTAINER */}
+          <div className="flex-1 flex flex-col min-w-0">
+            {/* Header */}
+            <header className="sticky top-0 bg-[#06141B]/90 backdrop-blur-md z-30 px-6 py-4 border-b border-[#253745] flex items-center justify-between">
+              <div>
+                <h1 className="text-xl sm:text-2xl font-bold text-white font-display">Hola, Julio</h1>
+                <p className="text-xs text-[#9BA8AB]">Dashboard privado • Tarjeta iniciada en 0.00 • Clientes CRM.</p>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setModalTxOpen(true)}
+                  className="px-3.5 py-2 rounded-xl bg-[#00E5FF] text-[#06141B] text-xs font-bold"
+                >
+                  + Registrar Movimiento
+                </button>
+              </div>
+            </header>
+
+            {/* Content Body */}
+            <main className="p-6 space-y-6 max-w-[1500px] w-full mx-auto">
+              {activeTab === 'dashboard' && (
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                  {/* Central Column */}
+                  <div className="lg:col-span-8 space-y-6">
+                    {/* Top Cards */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                      <div className="dashboard-card p-5">
+                        <span className="text-xs text-[#9BA8AB] block mb-1">Ingresos Totales (Reales)</span>
+                        <div className="text-2xl sm:text-3xl font-bold font-numeric text-white">{formatGTQ(totalIncome)}</div>
+                        <span className="text-xs text-emerald-400 mt-2 block font-semibold">{transactions.filter(t => t.tipo === 'ingreso').length} cobros registrados</span>
+                      </div>
+
+                      <div className="dashboard-card p-5">
+                        <span className="text-xs text-[#9BA8AB] block mb-1">Gastos Totales (Reales)</span>
+                        <div className="text-2xl sm:text-3xl font-bold font-numeric text-rose-400">{formatGTQ(totalExpenses)}</div>
+                        <span className="text-xs text-rose-400/80 mt-2 block font-semibold">{transactions.filter(t => t.tipo === 'gasto').length} egresos registrados</span>
+                      </div>
+                    </div>
+
+                    {/* Transacciones Recientes */}
+                    <div className="dashboard-card p-5">
+                      <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-sm font-semibold text-white font-display">Transacciones Recientes</h3>
+                        <button onClick={() => setModalTxOpen(true)} className="text-xs text-[#00E5FF] hover:underline font-semibold">+ Registrar Movimiento</button>
+                      </div>
+
+                      {transactions.length === 0 ? (
+                        <div className="py-8 text-center text-xs text-[#9BA8AB]">
+                          Aún no hay transacciones. Registra tu primer anticipo o gasto de hosting.
+                        </div>
+                      ) : (
+                        <div className="divide-y divide-[#253745]/50">
+                          {transactions.map(tx => (
+                            <div key={tx.id} className="py-3 flex justify-between items-center text-xs">
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <span className="font-semibold text-white">{tx.motivo}</span>
+                                  <span className={`text-[10px] px-1.5 py-0.5 rounded ${tx.tipo === 'ingreso' ? 'bg-emerald-950 text-emerald-300' : 'bg-rose-950 text-rose-300'}`}>
+                                    {tx.categoria || tx.tipo}
+                                  </span>
+                                </div>
+                                <div className="text-[11px] text-[#9BA8AB] mt-0.5 flex gap-2">
+                                  <span>{tx.id_cliente_o_proveedor || 'Sin asociar'}</span>
+                                  <span>•</span>
+                                  <span className="font-mono text-[#00E5FF]">{formatDate(tx.fecha)}</span>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-3">
+                                <span className={`font-numeric font-bold ${tx.tipo === 'ingreso' ? 'text-emerald-400' : 'text-white'}`}>
+                                  {tx.tipo === 'ingreso' ? '+' : '-'} {formatGTQ(tx.monto)}
+                                </span>
+                                <button
+                                  onClick={() => {
+                                    if (confirm(`¿Eliminar movimiento "${tx.motivo}" por ${formatGTQ(tx.monto)}?`)) {
+                                      handleDeleteTx(tx.id);
+                                    }
+                                  }}
+                                  title="Eliminar este movimiento"
+                                  className="p-1.5 rounded-lg text-[#9BA8AB] hover:text-rose-400 hover:bg-rose-950/40 border border-[#253745]/60 hover:border-rose-800/60 transition-all text-xs font-bold"
+                                >
+                                  🗑️
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Right Column (BAC Card Inicia en Q 0.00) */}
+                  <div className="lg:col-span-4 space-y-6">
+                    <div className="dashboard-card p-5">
+                      <div className="bac-card-gradient border border-[#253745] rounded-2xl p-5 text-white shadow-xl">
+                        <div className="flex justify-between items-center mb-6">
+                          <span className="font-bold text-xs bg-[#E31837] px-2 py-0.5 rounded">BAC Credomatic</span>
+                          <span className="text-[10px] text-[#9BA8AB] font-mono">Business</span>
+                        </div>
+                        <div className="text-right mb-4">
+                          <span className="text-[10px] text-[#9BA8AB] block">Saldo Disponible</span>
+                          <span className="text-xl font-bold font-numeric text-white">{formatGTQ(bacBalance)}</span>
+                        </div>
+                        <div className="font-mono text-sm tracking-widest text-neutral-300 mb-2">•••• •••• •••• 4519</div>
+                        <div className="flex justify-between text-xs text-neutral-400 pt-2 border-t border-white/10">
+                          <span>JULIO LEMUS</span>
+                          <span className="font-bold text-white">VISA</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB PROYECTOS (CON BOTÓN DE BORRAR) */}
+              {activeTab === 'proyectos' && (
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <h2 className="text-lg font-bold text-white">Proyectos ({projects.length})</h2>
+                      <p className="text-xs text-[#9BA8AB]">Crea, edita el progreso o elimina proyectos con un clic.</p>
+                    </div>
+                    <button onClick={() => setModalProjOpen(true)} className="px-3 py-1.5 rounded-xl bg-[#00E5FF] text-[#06141B] font-bold text-xs">+ Nuevo Proyecto</button>
+                  </div>
+
+                  {projects.length === 0 ? (
+                    <div className="dashboard-card p-10 text-center text-xs text-[#9BA8AB]">
+                      No tienes proyectos activos actualmente.
+                      <div className="mt-3">
+                        <button onClick={() => setModalProjOpen(true)} className="text-[#00E5FF] font-semibold underline">+ Crear Proyecto</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {projects.map(p => (
+                        <div key={p.id} className="dashboard-card p-5 space-y-3">
+                          <div className="flex justify-between items-start">
+                            <h3 className="font-bold text-white text-sm">{p.nombre}</h3>
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#06141B] border border-[#253745] text-[#00E5FF]">{p.estado}</span>
+                          </div>
+                          <div className="space-y-1">
+                            <div className="flex justify-between text-xs text-[#9BA8AB]">
+                              <span>Progreso</span>
+                              <span className="font-bold text-white font-mono">{p.progreso}%</span>
+                            </div>
+                            <div className="w-full bg-[#06141B] h-2 rounded-full overflow-hidden">
+                              <div className="bg-[#00E5FF] h-full" style={{ width: `${p.progreso}%` }} />
+                            </div>
+                          </div>
+                          <div className="flex justify-between items-center text-xs pt-2 border-t border-[#253745]">
+                            <button
+                              onClick={() => { setSelectedProj(p); setModalEditProgOpen(true); }}
+                              className="text-[#00E5FF] font-semibold hover:underline"
+                            >
+                              Editar progreso
+                            </button>
+                            <button
+                              onClick={() => handleDeleteProj(p.id)}
+                              className="text-rose-400 hover:text-rose-300 text-xs px-2 py-1 rounded bg-rose-950/30"
+                            >
+                              Eliminar
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* TAB CLIENTES CRM ("Contactado", "En proceso", "Cerrado") */}
+              {activeTab === 'clientes' && (
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <h2 className="text-lg font-bold text-white">Directorio CRM ({clients.length})</h2>
+                      <p className="text-xs text-[#9BA8AB]">Estados: Contactado • En proceso • Cerrado (Trato).</p>
+                    </div>
+                    <button onClick={() => setModalClientOpen(true)} className="px-3 py-1.5 rounded-xl bg-[#00E5FF] text-[#06141B] font-bold text-xs">+ Nuevo Cliente</button>
+                  </div>
+
+                  {/* Tabs de Filtro */}
+                  <div className="flex gap-2 text-xs">
+                    {['Todos', 'Contactado', 'En proceso', 'Cerrado'].map(st => (
+                      <button
+                        key={st}
+                        onClick={() => setClientFilterStatus(st)}
+                        className={`px-3 py-1 rounded-lg border ${clientFilterStatus === st ? 'bg-[#253745] text-[#00E5FF] font-bold' : 'text-[#9BA8AB] border-[#253745]'}`}
+                      >
+                        {st}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {filteredClients.map(c => {
+                      const badgeColor = c.estado === 'Cerrado' ? 'bg-emerald-950 text-emerald-300 border-emerald-800' : c.estado === 'En proceso' ? 'bg-amber-950 text-amber-300 border-amber-800' : 'bg-cyan-950 text-cyan-300 border-cyan-800';
+                      return (
+                        <div key={c.id} className="dashboard-card p-5 space-y-3">
+                          <div className="flex justify-between items-start">
+                            <h3 className="font-bold text-white text-sm">{c.empresa}</h3>
+                            <select
+                              value={c.estado}
+                              onChange={(e) => handleUpdateClientStatus(c.id, e.target.value)}
+                              className={`text-[10px] font-semibold px-2 py-1 rounded border cursor-pointer ${badgeColor}`}
+                            >
+                              <option value="Contactado" className="bg-[#11212D] text-[#00E5FF]">Contactado</option>
+                              <option value="En proceso" className="bg-[#11212D] text-amber-400">En proceso</option>
+                              <option value="Cerrado" className="bg-[#11212D] text-emerald-400">Trato Cerrado</option>
+                            </select>
+                          </div>
+                          <p className="text-xs text-[#9BA8AB]">{c.nombre} • {c.contacto}</p>
+                          <div className="pt-2 border-t border-[#253745] text-xs text-[#9BA8AB] flex justify-between items-center">
+                            <span>Estado: <strong className="text-white">{c.estado}</strong></span>
+                            <button onClick={() => handleDeleteClient(c.id)} className="text-rose-400 text-xs hover:underline">Eliminar</button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* TAB CONFIGURACIÓN */}
+              {activeTab === 'configuracion' && (
+                <div className="dashboard-card p-6 space-y-4 max-w-xl">
+                  <h2 className="text-lg font-bold text-white">Configuración del Sistema</h2>
+                  <p className="text-xs text-[#9BA8AB]">Moneda: GTQ (Quetzales). Saldo base de tarjeta configurado en 0.00.</p>
+                  <button
+                    onClick={() => {
+                      if (confirm('¿Reiniciar todo a cero?')) {
+                        setTransactions([]);
+                        setProjects([]);
+                        setClients([]);
+                        addToast('♻️ Todo reiniciado a cero (Saldo Q 0.00)');
+                      }
+                    }}
+                    className="px-4 py-2 rounded-xl bg-rose-950 text-rose-300 border border-rose-800 text-xs font-semibold"
+                  >
+                    Reiniciar Todo a Cero
+                  </button>
+                </div>
+              )}
+            </main>
+          </div>
+
+          {/* MODAL REGISTRAR MOVIMIENTO */}
+          {modalTxOpen && (
+            <div className="fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-4">
+              <div className="bg-[#11212D] border border-[#253745] rounded-2xl p-6 max-w-md w-full space-y-4 text-xs text-white">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-sm font-bold">Registrar Movimiento</h3>
+                  <button onClick={() => setModalTxOpen(false)} className="text-[#9BA8AB]">✕</button>
+                </div>
+                <form onSubmit={(e) => {
+                  e.preventDefault();
+                  const form = e.target;
+                  handleAddTx({
+                    tipo: form.tipo.value,
+                    monto: parseFloat(form.monto.value),
+                    motivo: form.motivo.value,
+                    fecha: form.fecha.value,
+                    categoria: form.categoria.value,
+                    id_cliente_o_proveedor: form.cliente.value
+                  });
+                }} className="space-y-3">
+                  <div className="grid grid-cols-2 gap-2">
+                    <select name="tipo" className="bg-[#06141B] border border-[#253745] rounded-lg p-2">
+                      <option value="ingreso">+ Ingreso (Cobro)</option>
+                      <option value="gasto">- Gasto (Egreso)</option>
+                    </select>
+                    <input name="monto" type="number" step="0.01" required placeholder="Monto (Q)" className="bg-[#06141B] border border-[#253745] rounded-lg p-2" />
+                  </div>
+                  <input name="motivo" type="text" required placeholder="Motivo / Concepto (ej. Anticipo 50%)" className="w-full bg-[#06141B] border border-[#253745] rounded-lg p-2" />
+                  <div className="grid grid-cols-2 gap-2">
+                    <input name="fecha" type="date" defaultValue={new Date().toISOString().split('T')[0]} className="bg-[#06141B] border border-[#253745] rounded-lg p-2" />
+                    <select name="categoria" className="bg-[#06141B] border border-[#253745] rounded-lg p-2">
+                      <option value="Webs completas">Webs completas</option>
+                      <option value="Mantenimiento">Mantenimiento</option>
+                      <option value="Dominio/Hosting">Dominio/Hosting</option>
+                      <option value="Servidores">Servidores</option>
+                      <option value="Otros">Otros</option>
+                    </select>
+                  </div>
+                  <input name="cliente" type="text" placeholder="Cliente o Proveedor asociado" className="w-full bg-[#06141B] border border-[#253745] rounded-lg p-2" />
+                  <div className="flex justify-end gap-2 pt-2">
+                    <button type="button" onClick={() => setModalTxOpen(false)} className="px-3 py-1.5 text-[#9BA8AB]">Cancelar</button>
+                    <button type="submit" className="px-4 py-2 bg-[#00E5FF] text-[#06141B] font-bold rounded-lg">Guardar</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* MODAL NUEVO PROYECTO */}
+          {modalProjOpen && (
+            <div className="fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-4">
+              <div className="bg-[#11212D] border border-[#253745] rounded-2xl p-6 max-w-md w-full space-y-4 text-xs text-white">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-sm font-bold">Nuevo Proyecto</h3>
+                  <button onClick={() => setModalProjOpen(false)} className="text-[#9BA8AB]">✕</button>
+                </div>
+                <form onSubmit={(e) => {
+                  e.preventDefault();
+                  const form = e.target;
+                  handleAddProj({
+                    nombre: form.nombre.value,
+                    id_cliente: form.cliente.value,
+                    presupuesto: parseFloat(form.presupuesto.value) || 0,
+                    progreso: parseInt(form.progreso.value, 10) || 0,
+                    fecha_entrega: form.fecha.value,
+                    estado: 'En progreso'
+                  });
+                }} className="space-y-3">
+                  <input name="nombre" type="text" required placeholder="Nombre del Proyecto" className="w-full bg-[#06141B] border border-[#253745] rounded-lg p-2" />
+                  <select name="cliente" className="w-full bg-[#06141B] border border-[#253745] rounded-lg p-2">
+                    {clients.map(c => <option key={c.id} value={c.id}>{c.empresa}</option>)}
+                  </select>
+                  <div className="grid grid-cols-2 gap-2">
+                    <input name="presupuesto" type="number" placeholder="Presupuesto (Q)" className="bg-[#06141B] border border-[#253745] rounded-lg p-2" />
+                    <input name="fecha" type="date" className="bg-[#06141B] border border-[#253745] rounded-lg p-2" />
+                  </div>
+                  <div>
+                    <label className="text-[#9BA8AB] block mb-1">Progreso Inicial (%)</label>
+                    <input name="progreso" type="range" min="0" max="100" defaultValue="25" className="w-full accent-[#00E5FF]" />
+                  </div>
+                  <div className="flex justify-end gap-2 pt-2">
+                    <button type="button" onClick={() => setModalProjOpen(false)} className="px-3 py-1.5 text-[#9BA8AB]">Cancelar</button>
+                    <button type="submit" className="px-4 py-2 bg-[#00E5FF] text-[#06141B] font-bold rounded-lg">Crear</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* MODAL EDITAR PROGRESO / BORRAR PROYECTO */}
+          {modalEditProgOpen && selectedProj && (
+            <div className="fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-4">
+              <div className="bg-[#11212D] border border-[#253745] rounded-2xl p-6 max-w-sm w-full space-y-4 text-xs text-white">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-sm font-bold">Editar: {selectedProj.nombre}</h3>
+                  <button onClick={() => setModalEditProgOpen(false)} className="text-[#9BA8AB]">✕</button>
+                </div>
+                <form onSubmit={(e) => {
+                  e.preventDefault();
+                  const form = e.target;
+                  handleUpdateProgress(selectedProj.id, parseInt(form.progreso.value, 10), form.estado.value);
+                }} className="space-y-4">
+                  <div>
+                    <label className="text-[#9BA8AB] block mb-1">Porcentaje de Progreso</label>
+                    <input name="progreso" type="range" min="0" max="100" defaultValue={selectedProj.progreso} className="w-full accent-[#00E5FF]" />
+                  </div>
+                  <div>
+                    <label className="text-[#9BA8AB] block mb-1">Estado</label>
+                    <select name="estado" defaultValue={selectedProj.estado} className="w-full bg-[#06141B] border border-[#253745] rounded-lg p-2">
+                      <option value="En progreso">En progreso</option>
+                      <option value="En revisión">En revisión</option>
+                      <option value="Finalizado">Finalizado</option>
+                    </select>
+                  </div>
+                  <div className="flex justify-between items-center pt-2">
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteProj(selectedProj.id)}
+                      className="text-rose-400 hover:underline"
+                    >
+                      Eliminar Proyecto
+                    </button>
+                    <div className="flex gap-2">
+                      <button type="button" onClick={() => setModalEditProgOpen(false)} className="px-3 py-1.5 text-[#9BA8AB]">Cancelar</button>
+                      <button type="submit" className="px-4 py-2 bg-[#00E5FF] text-[#06141B] font-bold rounded-lg">Guardar</button>
+                    </div>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* MODAL NUEVO CLIENTE (CRM) */}
+          {modalClientOpen && (
+            <div className="fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-4">
+              <div className="bg-[#11212D] border border-[#253745] rounded-2xl p-6 max-w-sm w-full space-y-4 text-xs text-white">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-sm font-bold">Nuevo Cliente / Lead</h3>
+                  <button onClick={() => setModalClientOpen(false)} className="text-[#9BA8AB]">✕</button>
+                </div>
+                <form onSubmit={(e) => {
+                  e.preventDefault();
+                  const form = e.target;
+                  handleAddClient({
+                    empresa: form.empresa.value,
+                    nombre: form.nombre.value,
+                    contacto: form.contacto.value,
+                    estado: form.estado.value
+                  });
+                }} className="space-y-3">
+                  <input name="empresa" type="text" required placeholder="Empresa o Negocio" className="w-full bg-[#06141B] border border-[#253745] rounded-lg p-2" />
+                  <input name="nombre" type="text" placeholder="Nombre de Contacto" className="w-full bg-[#06141B] border border-[#253745] rounded-lg p-2" />
+                  <input name="contacto" type="text" placeholder="Teléfono o Email" className="w-full bg-[#06141B] border border-[#253745] rounded-lg p-2" />
+                  <div>
+                    <label className="text-[#9BA8AB] block mb-1">Estado Comercial</label>
+                    <select name="estado" className="w-full bg-[#06141B] border border-[#253745] rounded-lg p-2">
+                      <option value="Contactado">Contactado</option>
+                      <option value="En proceso">En proceso</option>
+                      <option value="Cerrado">Trato Cerrado</option>
+                    </select>
+                  </div>
+                  <div className="flex justify-end gap-2 pt-2">
+                    <button type="button" onClick={() => setModalClientOpen(false)} className="px-3 py-1.5 text-[#9BA8AB]">Cancelar</button>
+                    <button type="submit" className="px-4 py-2 bg-[#00E5FF] text-[#06141B] font-bold rounded-lg">Guardar</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
