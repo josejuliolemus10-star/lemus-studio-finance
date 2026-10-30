@@ -7,30 +7,29 @@ export default {
   theme: {
     extend: {
       colors: {
-        navy: {
-          deep: '#06141B',
-        },
-        slate: {
-          dark: '#11212D',
-        },
-        border: {
-          muted: '#253745',
-        },
-        text: {
-          primary: '#CCD0CF',
-          secondary: '#9BA8AB',
+        studio: {
+          black: '#000000',
+          dark: '#080808',
+          card: '#0D0D0D',
+          cardHover: '#141414',
+          surface: '#111111',
+          border: '#242424',
+          borderHover: '#383838',
+          white: '#FFFFFF',
+          silver: '#E4E4E7',
+          gray: '#A1A1AA',
+          muted: '#71717A',
         },
         brand: {
-          deepNavy: '#06141B',
-          darkSlate: '#11212D',
-          borderBlue: '#253745',
-          lightGrey: '#9BA8AB',
-          pearlWhite: '#CCD0CF',
-          cyan: '#00E5FF',
+          deepNavy: '#000000', // Actualizado a Pure Black
+          darkSlate: '#0D0D0D', // Actualizado a Obsidian Dark
+          borderBlue: '#242424', // Actualizado a Dark Charcoal
+          lightGrey: '#A1A1AA',
+          pearlWhite: '#FFFFFF',
+          cyan: '#FFFFFF',      // Monocromático primario
           teal: '#2DD4BF',
-          fuchsia: '#D946EF',
+          fuchsia: '#A1A1AA',
           rose: '#F43F5E',
-          emerald: '#10B981',
           bacRed: '#E31837',
         }
       },
@@ -40,9 +39,8 @@ export default {
         mono: ['"Space Grotesk"', 'monospace'],
       },
       boxShadow: {
-        'glow-cyan': '0 0 25px -4px rgba(0, 229, 255, 0.25)',
-        'glow-fuchsia': '0 0 25px -4px rgba(217, 70, 239, 0.25)',
-        'glow-card': '0 8px 30px rgba(0, 0, 0, 0.45)',
+        'glow-white': '0 0 25px -4px rgba(255, 255, 255, 0.25)',
+        'glow-card': '0 10px 30px rgba(0, 0, 0, 0.8)',
       }
     },
   },
