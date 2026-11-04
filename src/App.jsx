@@ -892,19 +892,34 @@ export default function App() {
                       Movimientos en Proceso (2)
                     </h3>
                     <button
-                      onClick={() => setActiveTab('proyectos')}
+                      onClick={() => {
+                        setSearchQuery('');
+                        const el = document.getElementById('seccion-transacciones-recientes');
+                        if (el) el.scrollIntoView({ behavior: 'smooth' });
+                      }}
                       className="text-xs font-semibold text-neutral-500 hover:text-black transition"
+                      title="Ver todas las transacciones sin filtros"
                     >
-                      Ver archivo &gt;
+                      {searchQuery ? 'Ver todas las transacciones >' : 'Ver archivo >'}
                     </button>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3.5">
                     {/* Nota 1: Anticipo Santander */}
                     <div
-                      onClick={() => setSearchQuery('Santander')}
-                      className="idraft-card-note p-4 flex flex-col justify-between min-h-[145px] cursor-pointer hover:border-black/30 transition"
-                      title="Filtrar por Inmobiliaria Santander"
+                      onClick={() => {
+                        if (searchQuery.toLowerCase().includes('santander')) {
+                          setSearchQuery('');
+                        } else {
+                          setSearchQuery('Santander');
+                        }
+                      }}
+                      className={`idraft-card-note p-4 flex flex-col justify-between min-h-[145px] cursor-pointer transition select-none ${
+                        searchQuery.toLowerCase().includes('santander')
+                          ? 'ring-2 ring-black bg-neutral-100 shadow-md scale-[1.02]'
+                          : 'hover:border-black/30'
+                      }`}
+                      title={searchQuery.toLowerCase().includes('santander') ? 'Filtro activo: clic para quitar y ver todas las transacciones' : 'Clic para filtrar o desmarcar'}
                     >
                       <div className="flex items-center justify-between text-neutral-500">
                         <div className="w-7 h-7 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-800">
@@ -928,13 +943,29 @@ export default function App() {
                           <Bell className="w-3 h-3" />
                         </div>
                       </div>
+                      {searchQuery.toLowerCase().includes('santander') && (
+                        <div className="mt-1 pt-1.5 border-t border-neutral-200/80 text-[10px] font-bold text-black flex items-center justify-between">
+                          <span>✓ Filtrando</span>
+                          <span className="text-[9px] text-neutral-500 font-normal">Quitar ✕</span>
+                        </div>
+                      )}
                     </div>
 
                     {/* Nota 2: Pago Micrófono */}
                     <div
-                      onClick={() => setSearchQuery('microfono')}
-                      className="idraft-card-note p-4 flex flex-col justify-between min-h-[145px] cursor-pointer hover:border-black/30 transition"
-                      title="Filtrar por micrófono"
+                      onClick={() => {
+                        if (searchQuery.toLowerCase().includes('microfono')) {
+                          setSearchQuery('');
+                        } else {
+                          setSearchQuery('microfono');
+                        }
+                      }}
+                      className={`idraft-card-note p-4 flex flex-col justify-between min-h-[145px] cursor-pointer transition select-none ${
+                        searchQuery.toLowerCase().includes('microfono')
+                          ? 'ring-2 ring-black bg-neutral-100 shadow-md scale-[1.02]'
+                          : 'hover:border-black/30'
+                      }`}
+                      title={searchQuery.toLowerCase().includes('microfono') ? 'Filtro activo: clic para quitar y ver todas las transacciones' : 'Clic para filtrar o desmarcar'}
                     >
                       <div className="flex items-center justify-between text-neutral-500">
                         <div className="w-7 h-7 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-800">
@@ -958,6 +989,12 @@ export default function App() {
                           <Bell className="w-3 h-3" />
                         </div>
                       </div>
+                      {searchQuery.toLowerCase().includes('microfono') && (
+                        <div className="mt-1 pt-1.5 border-t border-neutral-200/80 text-[10px] font-bold text-black flex items-center justify-between">
+                          <span>✓ Filtrando</span>
+                          <span className="text-[9px] text-neutral-500 font-normal">Quitar ✕</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1211,7 +1248,7 @@ export default function App() {
               </div>
 
               {/* FILA 4: LISTA COMPLETA DE TRANSACCIONES REALES */}
-              <div className="idraft-card-white p-6 space-y-4">
+              <div id="seccion-transacciones-recientes" className="idraft-card-white p-6 space-y-4">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                   <div>
                     <h3 className="text-base font-bold text-neutral-900 font-display">
@@ -1227,9 +1264,12 @@ export default function App() {
                       {['Todos', 'ingreso', 'gasto'].map((tipo) => (
                         <button
                           key={tipo}
-                          onClick={() => setTxFilterType(tipo)}
+                          onClick={() => {
+                            setTxFilterType(tipo);
+                            if (tipo === 'Todos') setSearchQuery('');
+                          }}
                           className={`px-3 py-1 rounded-full text-xs font-semibold capitalize transition ${
-                            txFilterType === tipo
+                            txFilterType === tipo && (!searchQuery || tipo !== 'Todos')
                               ? 'bg-black text-white shadow-sm'
                               : 'text-neutral-500 hover:text-black'
                           }`}
@@ -1248,6 +1288,30 @@ export default function App() {
                     </button>
                   </div>
                 </div>
+
+                {/* Banner de filtro activo cuando se selecciona una tarjeta o búsqueda */}
+                {searchQuery && (
+                  <div className="bg-neutral-50 border border-neutral-200/90 rounded-2xl p-3 px-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs animate-fadeIn">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="w-2 h-2 rounded-full bg-black animate-pulse" />
+                      <span className="text-neutral-500 font-medium">Filtrando por movimiento:</span>
+                      <span className="font-bold text-neutral-900 bg-white px-2.5 py-1 rounded-xl border border-neutral-200 shadow-xs">
+                        "{searchQuery}"
+                      </span>
+                      <span className="text-neutral-400">
+                        ({filteredTransactions.length} de {transactions.length} movimientos)
+                      </span>
+                    </div>
+
+                    <button
+                      onClick={() => setSearchQuery('')}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black hover:bg-neutral-800 text-white font-bold text-xs transition active:scale-95 shadow-sm self-start sm:self-auto"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                      <span>Mostrar todas las transacciones</span>
+                    </button>
+                  </div>
+                )}
 
                 {/* Lista de transacciones exactas con animación de eliminación */}
                 <div className="divide-y divide-neutral-100">
