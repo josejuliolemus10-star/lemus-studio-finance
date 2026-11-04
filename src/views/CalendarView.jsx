@@ -186,9 +186,14 @@ export const CalendarView = ({
             <h2 className="text-xl sm:text-2xl font-extrabold text-neutral-900 font-display">
               Calendario de Citas & Horarios
             </h2>
-            <span className="text-xs font-semibold px-3 py-1 rounded-full bg-neutral-100 text-neutral-800 border border-neutral-200">
-              {calendarEvents.length} agendados
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold px-3 py-1 rounded-full bg-black text-white shadow-sm">
+                {calendarEvents.filter((e) => !e.completado).length} pendientes
+              </span>
+              <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-neutral-100 text-neutral-600 border border-neutral-200">
+                {calendarEvents.length} total
+              </span>
+            </div>
           </div>
           <p className="text-xs text-neutral-500 mt-1">
             Organiza reuniones con clientes, entregas de desarrollo y recordatorios de la agencia
@@ -499,26 +504,87 @@ export const CalendarView = ({
                   allEventsSorted.map((evt) => (
                     <div
                       key={evt.id}
-                      onClick={() => jumpToEventDate(evt.fecha)}
-                      className="p-3.5 rounded-2xl border border-neutral-200/80 bg-neutral-50 hover:bg-white hover:shadow-md transition-all space-y-1.5 cursor-pointer group"
+                      className="p-3.5 rounded-2xl border border-neutral-200/80 bg-neutral-50 hover:bg-white hover:shadow-md transition-all space-y-2 group"
                     >
                       <div className="flex items-center justify-between">
                         <span className="text-[10px] font-bold uppercase font-mono px-2 py-0.5 rounded-full bg-black text-white">
                           {formatDate(evt.fecha)}
                         </span>
-                        <span className="text-[10px] font-bold text-neutral-500">
-                          {evt.hora_inicio || 'Horario'}
-                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[10px] font-bold text-neutral-500 font-mono">
+                            {evt.hora_inicio || 'Horario'}
+                          </span>
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-700">
+                            {evt.tipo}
+                          </span>
+                        </div>
                       </div>
-                      <h4 className={`text-xs font-bold leading-tight ${evt.completado ? 'line-through text-neutral-400' : 'text-neutral-900 group-hover:text-black'}`}>
-                        {evt.titulo}
-                      </h4>
-                      <div className="flex items-center justify-between text-[11px] text-neutral-500 pt-1">
-                        <span>{evt.cliente || evt.tipo}</span>
-                        <span className="text-xs font-bold text-neutral-800 flex items-center gap-1">
+
+                      <div className="flex items-start gap-2.5">
+                        <button
+                          onClick={() => toggleEventCompleted(evt.id)}
+                          className="mt-0.5 text-neutral-900 transition shrink-0"
+                          title="Marcar como completada"
+                        >
+                          {evt.completado ? (
+                            <CheckCircle2 className="w-4 h-4 fill-black text-white" />
+                          ) : (
+                            <Circle className="w-4 h-4 text-neutral-300 hover:text-black" />
+                          )}
+                        </button>
+                        <div className="flex-1 min-w-0">
+                          <h4 className={`text-xs font-bold leading-tight ${evt.completado ? 'line-through text-neutral-400' : 'text-neutral-900'}`}>
+                            {evt.titulo}
+                          </h4>
+                          {evt.cliente && (
+                            <p className="text-[11px] text-neutral-500 mt-0.5">
+                              {evt.cliente}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      {evt.enlace && (
+                        <div className="pl-6 pt-0.5">
+                          <a
+                            href={evt.enlace}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1 text-[11px] font-bold text-neutral-900 hover:underline bg-white px-2 py-0.5 rounded-lg border border-neutral-200"
+                          >
+                            <Video className="w-3 h-3 text-neutral-700" />
+                            <span>Videollamada</span>
+                            <ExternalLink className="w-2.5 h-2.5" />
+                          </a>
+                        </div>
+                      )}
+
+                      <div className="flex items-center justify-between pt-2 border-t border-neutral-100 text-xs">
+                        <button
+                          onClick={() => jumpToEventDate(evt.fecha)}
+                          className="text-xs font-bold text-neutral-800 hover:underline flex items-center gap-1"
+                          title="Ir a este día en el calendario"
+                        >
                           <span>Ver en día</span>
                           <ArrowRight className="w-3 h-3" />
-                        </span>
+                        </button>
+
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => onOpenEditModal(evt)}
+                            className="text-neutral-500 hover:text-black flex items-center gap-1 text-[11px] font-semibold"
+                          >
+                            <Edit3 className="w-3 h-3" />
+                            <span>Editar</span>
+                          </button>
+                          <button
+                            onClick={() => requestDelete(evt)}
+                            className="text-neutral-400 hover:text-rose-600 flex items-center gap-1 text-[11px] font-semibold"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                            <span>Eliminar</span>
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))

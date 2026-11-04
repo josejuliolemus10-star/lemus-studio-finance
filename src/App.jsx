@@ -185,9 +185,13 @@ export default function App() {
     setModalTxOpen(true);
   };
 
+  const pendingCalendarEvents = useMemo(() => {
+    return calendarEvents.filter((e) => !e.completado);
+  }, [calendarEvents]);
+
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'calendario', label: 'Calendario', icon: CalendarIcon, count: String(calendarEvents.length) },
+    { id: 'calendario', label: 'Calendario', icon: CalendarIcon, count: String(pendingCalendarEvents.length) },
     { id: 'proyectos', label: 'Proyectos', icon: Briefcase, count: String(projects.length) },
     { id: 'clientes', label: 'Clientes CRM', icon: Users, count: String(clients.length) },
     { id: 'websites', label: 'Páginas Web', icon: Globe, count: String(websites.length) },
