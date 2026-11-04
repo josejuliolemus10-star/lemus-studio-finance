@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useFinancialStore } from '../store/useFinancialStore';
 import { Plus, Briefcase, Calendar, Sliders, Trash2, Code, User, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { formatGTQ, formatDate } from '../utils/formatters';
+import { ModalConfirmDelete } from '../components/ModalConfirmDelete';
 
 export const ProjectsView = ({ onOpenNewProject, onOpenEditProgress }) => {
   const projects = useFinancialStore((state) => state.projects);
@@ -9,6 +10,11 @@ export const ProjectsView = ({ onOpenNewProject, onOpenEditProgress }) => {
   const deleteProject = useFinancialStore((state) => state.deleteProject);
 
   const [filterStatus, setFilterStatus] = useState('Todos');
+
+  // Estado para modal de confirmación y animación de eliminación
+  const [deletingId, setDeletingId] = useState(null);
+  const [animatingDeleteId, setAnimatingDeleteId] = useState(null);
+  const [projectToDelete, setProjectToDelete] = useState(null);
 
   const filteredProjects = projects.filter((p) => {
     if (filterStatus === 'Todos') return true;
@@ -31,10 +37,36 @@ export const ProjectsView = ({ onOpenNewProject, onOpenEditProgress }) => {
     }
   };
 
+  const requestDelete = (proj) => {
+    setProjectToDelete(proj);
+    setDeletingId(proj.id);
+  };
+
+  const confirmDelete = () => {
+    if (!projectToDelete) return;
+    const id = projectToDelete.id;
+    setAnimatingDeleteId(id);
+    setTimeout(() => {
+      deleteProject(id);
+      setAnimatingDeleteId(null);
+      setDeletingId(null);
+      setProjectToDelete(null);
+    }, 320);
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
+      {/* Modal de confirmación para eliminar proyecto */}
+      <ModalConfirmDelete
+        isOpen={Boolean(deletingId)}
+        onClose={() => { setDeletingId(null); setProjectToDelete(null); }}
+        onConfirm={confirmDelete}
+        title={`¿Eliminar "${projectToDelete?.nombre}"?`}
+        message="¿Estás seguro de que deseas eliminar este proyecto? Esta acción no se puede deshacer."
+      />
+
       {/* Header de la sección (Estilo Black & White Limpio) */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="bg-white rounded-[28px] p-6 sm:p-7 border border-neutral-200/80 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl sm:text-2xl font-extrabold text-neutral-900 font-display flex items-center gap-2.5">
             Gestión de Proyectos
@@ -78,8 +110,8 @@ export const ProjectsView = ({ onOpenNewProject, onOpenEditProgress }) => {
 
       {/* Grid de Proyectos */}
       {filteredProjects.length === 0 ? (
-        <div className="bg-neutral-50 border border-neutral-200/80 rounded-[28px] p-12 text-center flex flex-col items-center justify-center">
-          <div className="w-12 h-12 rounded-2xl bg-white border border-neutral-200 flex items-center justify-center text-neutral-700 mb-3 shadow-sm">
+        <div className="bg-white rounded-[28px] border border-neutral-200/80 p-12 text-center flex flex-col items-center justify-center shadow-sm">
+          <div className="w-12 h-12 rounded-2xl bg-neutral-100 border border-neutral-200 flex items-center justify-center text-neutral-700 mb-3 shadow-sm">
             <Briefcase className="w-6 h-6" />
           </div>
           <h3 className="text-sm font-bold text-neutral-900">No hay proyectos en esta lista</h3>
@@ -95,93 +127,94 @@ export const ProjectsView = ({ onOpenNewProject, onOpenEditProgress }) => {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {filteredProjects.map((proj) => (
-            <div
-              key={proj.id}
-              className="bg-white rounded-[28px] p-6 border border-neutral-200/80 shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col justify-between space-y-4 group"
-            >
-              <div>
-                {/* Cabecera de la tarjeta */}
-                <div className="flex items-start justify-between gap-2 mb-2">
-                  <div className="min-w-0">
-                    <h3 className="text-base font-bold text-neutral-900 font-display truncate">
-                      {proj.nombre}
-                    </h3>
-                    <p className="text-xs text-neutral-500 flex items-center gap-1.5 mt-0.5">
-                      <User className="w-3.5 h-3.5 text-neutral-400" />
-                      <span className="truncate font-medium">{getClientName(proj.id_cliente)}</span>
-                    </p>
-                  </div>
-                  <span className={`text-[10px] px-3 py-1 rounded-full font-bold border shrink-0 ${getStatusBadge(proj.estado)}`}>
-                    {proj.estado}
-                  </span>
-                </div>
-
-                {/* Stack tecnológico */}
-                {proj.tecnologia && (
-                  <p className="text-[11px] font-mono text-neutral-500 flex items-center gap-1.5 mt-2">
-                    <Code className="w-3.5 h-3.5 text-neutral-400" />
-                    <span className="truncate">{proj.tecnologia}</span>
-                  </p>
-                )}
-              </div>
-
-              {/* Barra de Progreso Visual (Negro & Blanco) */}
-              <div className="space-y-2 bg-neutral-50 p-4 rounded-2xl border border-neutral-100">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-neutral-500 font-medium">Progreso Real:</span>
-                  <span className="font-numeric text-neutral-900 font-bold">{proj.progreso}%</span>
-                </div>
-                <div className="w-full bg-neutral-200 h-2.5 rounded-full overflow-hidden">
-                  <div
-                    className="bg-black h-full rounded-full transition-all duration-500"
-                    style={{ width: `${proj.progreso}%` }}
-                  />
-                </div>
-              </div>
-
-              {/* Footer de la tarjeta con presupuesto y fecha */}
-              <div className="pt-3 border-t border-neutral-100 flex items-center justify-between text-xs">
+          {filteredProjects.map((proj) => {
+            const isDeleting = animatingDeleteId === proj.id;
+            return (
+              <div
+                key={proj.id}
+                className={`bg-white rounded-[28px] p-6 border border-neutral-200/80 shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col justify-between space-y-4 group ${
+                  isDeleting ? 'item-deleting' : ''
+                }`}
+              >
                 <div>
-                  <span className="text-[10px] text-neutral-400 block font-medium">Presupuesto</span>
-                  <span className="font-numeric font-bold text-neutral-900">
-                    {formatGTQ(proj.presupuesto)}
-                  </span>
+                  {/* Cabecera de la tarjeta */}
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div className="min-w-0">
+                      <h3 className="text-base font-bold text-neutral-900 font-display truncate">
+                        {proj.nombre}
+                      </h3>
+                      <p className="text-xs text-neutral-500 flex items-center gap-1.5 mt-0.5">
+                        <User className="w-3.5 h-3.5 text-neutral-400" />
+                        <span className="truncate font-medium">{getClientName(proj.id_cliente)}</span>
+                      </p>
+                    </div>
+                    <span className={`text-[10px] px-3 py-1 rounded-full font-bold border shrink-0 ${getStatusBadge(proj.estado)}`}>
+                      {proj.estado}
+                    </span>
+                  </div>
+
+                  {/* Stack tecnológico */}
+                  {proj.tecnologia && (
+                    <p className="text-[11px] font-mono text-neutral-500 flex items-center gap-1.5 mt-2">
+                      <Code className="w-3.5 h-3.5 text-neutral-400" />
+                      <span className="truncate">{proj.tecnologia}</span>
+                    </p>
+                  )}
                 </div>
 
-                <div className="text-right">
-                  <span className="text-[10px] text-neutral-400 block font-medium">Entrega</span>
-                  <span className="font-mono text-neutral-600 text-[11px] flex items-center gap-1 justify-end">
-                    <Calendar className="w-3 h-3 text-neutral-400" />
-                    {formatDate(proj.fecha_entrega)}
-                  </span>
+                {/* Barra de Progreso Visual (Negro & Blanco) */}
+                <div className="space-y-2 bg-neutral-50 p-4 rounded-2xl border border-neutral-100">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-neutral-500 font-medium">Progreso Real:</span>
+                    <span className="font-numeric text-neutral-900 font-bold">{proj.progreso}%</span>
+                  </div>
+                  <div className="w-full bg-neutral-200 h-2.5 rounded-full overflow-hidden">
+                    <div
+                      className="bg-black h-full rounded-full transition-all duration-500"
+                      style={{ width: `${proj.progreso}%` }}
+                    />
+                  </div>
+                </div>
+
+                {/* Footer de la tarjeta con presupuesto y fecha */}
+                <div className="pt-3 border-t border-neutral-100 flex items-center justify-between text-xs">
+                  <div>
+                    <span className="text-[10px] text-neutral-400 block font-medium">Presupuesto</span>
+                    <span className="font-numeric font-bold text-neutral-900">
+                      {formatGTQ(proj.presupuesto)}
+                    </span>
+                  </div>
+
+                  <div className="text-right">
+                    <span className="text-[10px] text-neutral-400 block font-medium">Entrega</span>
+                    <span className="font-mono text-neutral-600 text-[11px] flex items-center gap-1 justify-end">
+                      <Calendar className="w-3 h-3 text-neutral-400" />
+                      {formatDate(proj.fecha_entrega)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Acciones de la tarjeta: Editar progreso y Eliminar */}
+                <div className="flex items-center justify-between gap-2 pt-2 border-t border-neutral-100">
+                  <button
+                    onClick={() => onOpenEditProgress(proj)}
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-neutral-900 hover:bg-black text-white text-xs font-semibold transition active:scale-95 shadow-sm"
+                  >
+                    <Sliders className="w-3.5 h-3.5 text-neutral-300" />
+                    <span>Editar progreso</span>
+                  </button>
+
+                  <button
+                    onClick={() => requestDelete(proj)}
+                    title="Eliminar proyecto"
+                    className="p-2 rounded-xl text-neutral-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
-
-              {/* Acciones de la tarjeta: Editar progreso y Eliminar */}
-              <div className="flex items-center justify-between gap-2 pt-2 border-t border-neutral-100">
-                <button
-                  onClick={() => onOpenEditProgress(proj)}
-                  className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-neutral-900 hover:bg-black text-white text-xs font-semibold transition active:scale-95 shadow-sm"
-                >
-                  <Sliders className="w-3.5 h-3.5 text-neutral-300" />
-                  <span>Editar progreso</span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    if (window.confirm(`¿Estás seguro de que deseas eliminar el proyecto "${proj.nombre}"?`)) {
-                      deleteProject(proj.id);
-                    }
-                  }}
-                  title="Eliminar proyecto"
-                  className="p-2 rounded-xl text-neutral-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

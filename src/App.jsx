@@ -44,6 +44,7 @@ import { ModalClient } from './components/ModalClient';
 import { ModalEditProgress } from './components/ModalEditProgress';
 import { ModalWebsite } from './components/ModalWebsite';
 import { ModalCalendarEvent } from './components/ModalCalendarEvent';
+import { ModalConfirmDelete } from './components/ModalConfirmDelete';
 import { FloatingActionButton } from './components/FloatingActionButton';
 import { ProjectsView } from './views/ProjectsView';
 import { ClientsView } from './views/ClientsView';
@@ -105,6 +106,10 @@ export default function App() {
   const [selectedEventToEdit, setSelectedEventToEdit] = useState(null);
   const [calendarDefaultDate, setCalendarDefaultDate] = useState(null);
 
+  // Estado para eliminar transacciones con confirmación y animación
+  const [txToDelete, setTxToDelete] = useState(null);
+  const [animatingDeleteTxId, setAnimatingDeleteTxId] = useState(null);
+
   // Store
   const transactions = useFinancialStore((state) => state.transactions);
   const projects = useFinancialStore((state) => state.projects);
@@ -145,15 +150,26 @@ export default function App() {
     );
   }, [searchQuery, sortedTransactions, txFilterType]);
 
-  const handleExportExcel = () => {
-    exportToExcel({
+  const handleExportExcel = async () => {
+    await exportToExcel({
       transactions,
       websites,
       calendarEvents,
       projects,
       clients
     });
-    addToast('📊 Libro de Excel descargado listo para Google Sheets.', 'success');
+    addToast('📊 Libro de Excel descargado con formato profesional.', 'success');
+  };
+
+  const confirmDeleteTransaction = () => {
+    if (!txToDelete) return;
+    const id = txToDelete.id;
+    setAnimatingDeleteTxId(id);
+    setTimeout(() => {
+      deleteTransaction(id);
+      setAnimatingDeleteTxId(null);
+      setTxToDelete(null);
+    }, 320);
   };
 
   const navItems = [
@@ -168,6 +184,15 @@ export default function App() {
   return (
     <div className="min-h-screen py-4 px-2 sm:px-4 lg:px-6 flex items-center justify-center">
       <ToastContainer />
+
+      {/* Modal de confirmación para eliminar movimiento */}
+      <ModalConfirmDelete
+        isOpen={Boolean(txToDelete)}
+        onClose={() => setTxToDelete(null)}
+        onConfirm={confirmDeleteTransaction}
+        title={`¿Eliminar movimiento "${txToDelete?.motivo}"?`}
+        message={`¿Estás seguro de que deseas eliminar este movimiento de ${formatGTQ(txToDelete?.monto)}? Esta acción afectará el balance de tu tarjeta BAC.`}
+      />
 
       <FloatingActionButton
         onOpenTransaction={() => setModalTxOpen(true)}
@@ -198,10 +223,10 @@ export default function App() {
         defaultDate={calendarDefaultDate}
       />
 
-      {/* MARCO PRINCIPAL VIDRIO FROSTED (ESTILO iDraft DE IMAGEN 1) */}
+      {/* MARCO PRINCIPAL VIDRIO FROSTED */}
       <div className="idraft-glass-frame w-full max-w-[1550px] p-4 sm:p-6 lg:p-7 flex flex-col lg:flex-row gap-6">
 
-        {/* SIDEBAR FLOTANTE (ESTILO BLANCO MINIMALISTA) */}
+        {/* SIDEBAR FLOTANTE */}
         <aside className="w-full lg:w-60 bg-white rounded-[32px] p-6 shadow-sm border border-neutral-200/70 flex flex-col justify-between shrink-0">
           <div className="space-y-7">
             {/* Logo */}
@@ -251,7 +276,7 @@ export default function App() {
               })}
             </nav>
 
-            {/* INTEGRACIONES (Estilo Image 1) */}
+            {/* INTEGRACIONES */}
             <div className="hidden lg:block pt-3 border-t border-neutral-100 space-y-2">
               <span className="text-[10px] uppercase font-bold tracking-wider text-neutral-400 px-4">
                 Integraciones
@@ -271,7 +296,7 @@ export default function App() {
               </div>
             </div>
 
-            {/* EQUIPOS (Estilo Image 1) */}
+            {/* EQUIPOS */}
             <div className="hidden lg:block pt-2 border-t border-neutral-100 space-y-2">
               <span className="text-[10px] uppercase font-bold tracking-wider text-neutral-400 px-4">
                 Equipos
@@ -283,38 +308,38 @@ export default function App() {
                 </div>
                 <div className="flex items-center gap-2 text-neutral-400 font-medium">
                   <span className="w-2 h-2 rounded-full bg-neutral-300" />
-                  <span>UI / UX Design</span>
+                  <span>Diseño UI / UX</span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* User profile & settings bottom */}
+          {/* Perfil inferior */}
           <div className="hidden lg:flex items-center gap-3 pt-4 border-t border-neutral-100">
             <div className="w-10 h-10 rounded-full bg-neutral-900 text-white flex items-center justify-center font-bold text-xs shadow-sm">
               JL
             </div>
             <div className="flex flex-col text-left">
               <span className="text-xs font-bold text-neutral-900 leading-tight">Julio Lemus</span>
-              <span className="text-[10px] text-neutral-400">Director Creativo</span>
+              <span className="text-[10px] text-neutral-400">Director Lemus Studio</span>
             </div>
           </div>
         </aside>
 
         {/* CONTENIDO PRINCIPAL */}
         <main className="flex-1 space-y-6 overflow-hidden">
-          {/* HEADER (Estilo "Hi, Dilan!" -> "Hi, Julio!") */}
+          {/* HEADER 100% EN ESPAÑOL */}
           <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
               <h1 className="text-2xl sm:text-3xl font-extrabold text-neutral-900 tracking-tight font-display">
-                Hi, Julio! 👋
+                ¡Hola, Julio! 👋
               </h1>
               <p className="text-xs text-neutral-500 mt-0.5">
                 Dashboard financiero privado • Lemus Studio
               </p>
             </div>
 
-            {/* Header Right Actions (Estilo Image 1: + Create, Search, Bell, Avatar) */}
+            {/* Header Botones */}
             <div className="flex items-center gap-3 self-end sm:self-auto">
               <button
                 onClick={() => setModalTxOpen(true)}
@@ -327,7 +352,7 @@ export default function App() {
               <button
                 onClick={handleExportExcel}
                 className="bg-white hover:bg-neutral-50 text-neutral-700 p-2.5 rounded-full border border-neutral-200/80 shadow-sm transition active:scale-95"
-                title="Descargar Excel"
+                title="Descargar Reporte Excel"
               >
                 <Download className="w-4 h-4" />
               </button>
@@ -351,15 +376,15 @@ export default function App() {
           {/* VISTAS CONDICIONALES */}
           {activeTab === 'dashboard' && (
             <div className="space-y-6 animate-fadeIn">
-              {/* FILA SUPERIOR: 3 TARJETAS BENTO (Overall Information, Weekly Progress, Month Progress) */}
+              {/* FILA SUPERIOR: 3 TARJETAS BENTO CON BORDE PROPIO */}
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
                 
-                {/* 1. OVERALL INFORMATION (TARJETA NEGRA PRINCIPAL ESTILO IMAGE 1) */}
+                {/* 1. INFORMACIÓN GENERAL (TARJETA NEGRA) */}
                 <div className="idraft-card-dark p-6 flex flex-col justify-between relative overflow-hidden group">
                   <div className="flex items-center justify-between text-neutral-400">
-                    <span className="text-xs font-semibold text-neutral-300">Overall Information</span>
+                    <span className="text-xs font-semibold text-neutral-300">Información General</span>
                     <div className="flex items-center gap-2">
-                      <button className="p-1 hover:text-white transition">
+                      <button onClick={handleExportExcel} className="p-1 hover:text-white transition" title="Exportar reporte">
                         <Share2 className="w-3.5 h-3.5" />
                       </button>
                       <button className="p-1 hover:text-white transition">
@@ -380,7 +405,7 @@ export default function App() {
                     </span>
                   </div>
 
-                  {/* 3 Mini Tarjetas Blancas Internas (Estilo Image 1) */}
+                  {/* 3 Mini Tarjetas Blancas Internas */}
                   <div className="grid grid-cols-3 gap-2.5 pt-2">
                     <div className="bg-white rounded-2xl p-3 text-neutral-900 text-center shadow-sm">
                       <span className="text-xs font-bold font-numeric block">{formatGTQ(totalIncome)}</span>
@@ -397,11 +422,11 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* 2. WEEKLY PROGRESS (TARJETA BLANCA CON CURVA DE FLUJO) */}
+                {/* 2. PROGRESO SEMANAL (TARJETA BLANCA CON BORDE) */}
                 <div className="idraft-card-white p-6 flex flex-col justify-between">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="text-sm font-bold text-neutral-900 font-display">Weekly progress</h3>
+                      <h3 className="text-sm font-bold text-neutral-900 font-display">Progreso Semanal</h3>
                       <div className="flex items-center gap-3 text-[11px] text-neutral-500 mt-1">
                         <div className="flex items-center gap-1.5">
                           <span className="w-2 h-2 rounded-full bg-black" />
@@ -418,24 +443,24 @@ export default function App() {
                     </div>
                   </div>
 
-                  {/* Gráfica de onda suave con días L M M J V S D */}
+                  {/* Gráfica de curva semanal */}
                   <div className="py-1">
                     <WeeklyCurveProgress transactions={transactions} />
                   </div>
 
                   <div className="text-[11px] text-neutral-400 flex items-center justify-between pt-2 border-t border-neutral-100">
-                    <span>M T W T F S S</span>
-                    <span className="font-semibold text-neutral-700">+Q 288.00 Margen Neto</span>
+                    <span>L M M J V S D</span>
+                    <span className="font-semibold text-neutral-700">+{formatGTQ(netProfit)} Margen Neto</span>
                   </div>
                 </div>
 
-                {/* 3. MONTH PROGRESS (TARJETA BLANCA CON ANILLO RADIAL Y EXCEL BUTTON) */}
+                {/* 3. PROGRESO DEL MES (TARJETA BLANCA CON BORDE) */}
                 <div className="idraft-card-white p-6 flex flex-col justify-between">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="text-sm font-bold text-neutral-900 font-display">Month progress</h3>
+                      <h3 className="text-sm font-bold text-neutral-900 font-display">Progreso del Mes</h3>
                       <span className="text-[11px] text-emerald-600 font-bold block mt-0.5">
-                        +20% compared to last month*
+                        +20% comparado con el mes anterior*
                       </span>
                     </div>
                     <div className="p-2 rounded-full bg-neutral-100 text-neutral-600">
@@ -446,7 +471,7 @@ export default function App() {
                   {/* Anillos concéntricos de progreso */}
                   <ConcentricMonthProgress totalIncome={totalIncome} totalExpenses={totalExpenses} />
 
-                  {/* Botón Download Report (Excel) exactamente como en Image 1 */}
+                  {/* Botón Descargar Reporte (Excel) */}
                   <div className="flex items-center gap-2 pt-2">
                     <button
                       onClick={handleExportExcel}
@@ -460,21 +485,21 @@ export default function App() {
                       className="flex-1 bg-black hover:bg-neutral-800 text-white rounded-2xl py-2.5 px-4 text-xs font-semibold flex items-center justify-center gap-2 shadow-sm transition active:scale-95"
                     >
                       <Download className="w-3.5 h-3.5" />
-                      <span>Download Report</span>
+                      <span>Descargar Reporte (Excel)</span>
                     </button>
                   </div>
                 </div>
 
               </div>
 
-              {/* FILA MEDIA: METAS DEL MES + TAREAS EN PROCESO (STICKY CARDS ESTILO IMAGE 1) */}
+              {/* FILA MEDIA: METAS DEL MES + MOVIMIENTOS EN PROCESO */}
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
                 
-                {/* METAS DEL MES (Left 4 cols) */}
+                {/* METAS DEL MES */}
                 <div className="lg:col-span-4 idraft-card-white p-6 flex flex-col justify-between">
                   <div>
                     <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-sm font-bold text-neutral-900 font-display">Month goals:</h3>
+                      <h3 className="text-sm font-bold text-neutral-900 font-display">Objetivos del Mes:</h3>
                       <div className="flex items-center gap-1.5 text-neutral-400">
                         <Clock className="w-3.5 h-3.5" />
                         <Edit3 className="w-3.5 h-3.5" />
@@ -515,17 +540,17 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* TASK IN PROCESS (STICKY NOTES ESTILO IMAGE 1 - Right 8 cols) */}
+                {/* MOVIMIENTOS EN PROCESO */}
                 <div className="lg:col-span-8 space-y-3">
                   <div className="flex items-center justify-between px-1">
                     <h3 className="text-sm font-bold text-neutral-900 font-display">
-                      Task In process (2)
+                      Movimientos en Proceso (2)
                     </h3>
                     <button
                       onClick={() => setActiveTab('proyectos')}
                       className="text-xs font-semibold text-neutral-500 hover:text-black transition"
                     >
-                      Open archive &gt;
+                      Ver archivo &gt;
                     </button>
                   </div>
 
@@ -582,7 +607,7 @@ export default function App() {
                       </div>
                     </div>
 
-                    {/* Nota 3: + Add task (Dashed Card) */}
+                    {/* Nota 3: + Registrar Movimiento */}
                     <div
                       onClick={() => setModalTxOpen(true)}
                       className="border-2 border-dashed border-neutral-300 hover:border-black rounded-[24px] p-5 flex flex-col items-center justify-center min-h-[145px] cursor-pointer group hover:bg-white/60 transition-all text-center"
@@ -602,14 +627,14 @@ export default function App() {
 
               </div>
 
-              {/* FILA INFERIOR: LAST PROJECTS (HORIZONTALES OSCUROS ESTILO IMAGE 1) */}
+              {/* FILA INFERIOR: ÚLTIMOS PROYECTOS & PORTAFOLIO */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between px-1">
                   <h3 className="text-sm font-bold text-neutral-900 font-display">
-                    Last Projects & Portafolio
+                    Últimos Proyectos & Portafolio
                   </h3>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-neutral-400">Sort by</span>
+                    <span className="text-xs text-neutral-400">Ordenar por</span>
                     <button className="flex items-center gap-1 text-xs font-semibold text-neutral-700 bg-white px-2.5 py-1 rounded-xl border border-neutral-200">
                       <span>Recientes</span>
                       <ChevronDown className="w-3 h-3" />
@@ -640,7 +665,7 @@ export default function App() {
                     </div>
                   </div>
 
-                  {/* Proyecto 2: Portal Inmobiliario Santander (Web Creada) */}
+                  {/* Proyecto 2: Portal Inmobiliario Santander */}
                   <div className="bg-[#141414] text-white p-5 rounded-[24px] flex flex-col justify-between shadow-md hover:shadow-xl transition">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold text-white">Portal Santander Inmuebles</span>
@@ -696,7 +721,7 @@ export default function App() {
                 </div>
               </div>
 
-              {/* FILA 4: LISTA COMPLETA DE TRANSACCIONES REALES (IMAGEN 2) */}
+              {/* FILA 4: LISTA COMPLETA DE TRANSACCIONES REALES */}
               <div className="idraft-card-white p-6 space-y-4">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                   <div>
@@ -735,14 +760,17 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* Lista de transacciones exactas de Image 2 */}
+                {/* Lista de transacciones exactas con animación de eliminación */}
                 <div className="divide-y divide-neutral-100">
                   {filteredTransactions.map((tx) => {
                     const isIncome = tx.tipo === 'ingreso';
+                    const isDeleting = animatingDeleteTxId === tx.id;
                     return (
                       <div
                         key={tx.id}
-                        className="py-3.5 flex items-center justify-between gap-4 hover:bg-neutral-50/80 px-2 rounded-2xl transition group"
+                        className={`py-3.5 flex items-center justify-between gap-4 hover:bg-neutral-50/80 px-2 rounded-2xl transition group ${
+                          isDeleting ? 'item-deleting' : ''
+                        }`}
                       >
                         <div className="flex items-center gap-3.5">
                           <div
@@ -792,11 +820,7 @@ export default function App() {
                           </span>
 
                           <button
-                            onClick={() => {
-                              if (confirm(`¿Eliminar "${tx.motivo}"?`)) {
-                                deleteTransaction(tx.id);
-                              }
-                            }}
+                            onClick={() => setTxToDelete(tx)}
                             className="p-1.5 rounded-lg text-neutral-400 hover:text-rose-600 hover:bg-rose-50 transition"
                             title="Eliminar movimiento"
                           >
@@ -813,7 +837,7 @@ export default function App() {
 
           {/* OTRAS PESTAÑAS (Calendario, Proyectos, Clientes, Websites, Settings) */}
           {activeTab === 'calendario' && (
-            <div className="idraft-card-white p-6 animate-fadeIn">
+            <div className="animate-fadeIn">
               <CalendarView
                 onOpenAddModal={(date) => {
                   setCalendarDefaultDate(date);
@@ -830,7 +854,7 @@ export default function App() {
           )}
 
           {activeTab === 'proyectos' && (
-            <div className="idraft-card-white p-6 animate-fadeIn">
+            <div className="animate-fadeIn">
               <ProjectsView
                 onOpenNewProject={() => setModalProjOpen(true)}
                 onOpenEditProgress={(proj) => {
@@ -842,13 +866,13 @@ export default function App() {
           )}
 
           {activeTab === 'clientes' && (
-            <div className="idraft-card-white p-6 animate-fadeIn">
+            <div className="animate-fadeIn">
               <ClientsView onOpenNewClient={() => setModalClientOpen(true)} />
             </div>
           )}
 
           {activeTab === 'websites' && (
-            <div className="idraft-card-white p-6 animate-fadeIn">
+            <div className="animate-fadeIn">
               <WebsitesView
                 onOpenNewWebsite={() => {
                   setSelectedWebsiteToEdit(null);
@@ -863,7 +887,7 @@ export default function App() {
           )}
 
           {activeTab === 'configuracion' && (
-            <div className="idraft-card-white p-6 animate-fadeIn">
+            <div className="bg-white rounded-[28px] p-6 border border-neutral-200/80 shadow-sm animate-fadeIn">
               <SettingsView />
             </div>
           )}
