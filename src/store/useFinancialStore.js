@@ -120,6 +120,15 @@ export const useFinancialStore = create(
       // Saldo base de la tarjeta BAC Credomatic (Saldo exacto: Q 0.00 inicial + 288.00 neto = Q 288.00)
       baseBacBalance: 0.00,
 
+      // --- APUNTES Y METAS DEL MES (100% Persistente y Editable) ---
+      monthNotes: '• Recordar enviar cotización de mantenimiento a Santander.\n• Preparar demo de mapa interactivo para el viernes 10:00 AM.\n• Comprar dominio adicional para portafolio Lemus Studio.',
+      monthGoals: [
+        { id: 1, text: 'Cobro anticipo 50% Inmobiliaria Santander', completed: true },
+        { id: 2, text: 'Compra de micrófono para setup oficina', completed: true },
+        { id: 3, text: 'Entregar maqueta frontend Santander', completed: false },
+        { id: 4, text: 'Cotizar nueva web para Café Despierto', completed: false },
+      ],
+
       // --- CATÁLOGO DE PÁGINAS WEB CREADAS (Para reciclaje de código y componentes) ---
       websites: [
         {
@@ -407,6 +416,33 @@ export const useFinancialStore = create(
         if (client) {
           get().addToast(`🗑️ Cliente eliminado.`, 'info');
         }
+      },
+
+      // --- ACCIONES DE APUNTES Y METAS ---
+      setMonthNotes: (notes) => {
+        set({ monthNotes: notes });
+      },
+
+      addMonthGoal: (text) => {
+        if (!text.trim()) return;
+        const newGoal = { id: Date.now(), text: text.trim(), completed: false };
+        set((state) => ({
+          monthGoals: [...state.monthGoals, newGoal]
+        }));
+        get().addToast(`🎯 Meta añadida: "${newGoal.text}"`, 'success');
+      },
+
+      toggleMonthGoal: (id) => {
+        set((state) => ({
+          monthGoals: state.monthGoals.map((g) => (g.id === id ? { ...g, completed: !g.completed } : g))
+        }));
+      },
+
+      deleteMonthGoal: (id) => {
+        set((state) => ({
+          monthGoals: state.monthGoals.filter((g) => g.id !== id)
+        }));
+        get().addToast(`🗑️ Meta eliminada`, 'info');
       },
 
       // --- REINICIAR TODO A CERO ---
