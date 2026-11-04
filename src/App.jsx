@@ -49,6 +49,7 @@ import { ModalWebsite } from './components/ModalWebsite';
 import { ModalCalendarEvent } from './components/ModalCalendarEvent';
 import { ModalConfirmDelete } from './components/ModalConfirmDelete';
 import { ModalMonthNotes } from './components/ModalMonthNotes';
+import { ModalMonthlyTarget } from './components/ModalMonthlyTarget';
 import { FloatingActionButton } from './components/FloatingActionButton';
 import { ProjectsView } from './views/ProjectsView';
 import { ClientsView } from './views/ClientsView';
@@ -99,8 +100,9 @@ export default function App() {
   const [selectedEventToEdit, setSelectedEventToEdit] = useState(null);
   const [calendarDefaultDate, setCalendarDefaultDate] = useState(null);
 
-  // Modal para escribir apuntes del mes
+  // Modal para escribir apuntes del mes y definir meta mensual
   const [modalNotesOpen, setModalNotesOpen] = useState(false);
+  const [modalTargetOpen, setModalTargetOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
 
   // Estado para el panel de recordatorios ("del día que sea")
@@ -121,6 +123,7 @@ export default function App() {
   const baseBacBalance = useFinancialStore((state) => state.baseBacBalance);
   const monthNotes = useFinancialStore((state) => state.monthNotes);
   const monthGoals = useFinancialStore((state) => state.monthGoals);
+  const monthlyTarget = useFinancialStore((state) => state.monthlyTarget || 3000);
   const toggleMonthGoal = useFinancialStore((state) => state.toggleMonthGoal);
   const toggleEventCompleted = useFinancialStore((state) => state.toggleEventCompleted);
   const addCalendarEvent = useFinancialStore((state) => state.addCalendarEvent);
@@ -210,6 +213,22 @@ export default function App() {
     addToast('📊 Libro de Excel descargado con formato profesional.', 'success');
   };
 
+  const handleCopySummary = () => {
+    const marginPercent = totalIncome > 0 ? Math.round((netProfit / totalIncome) * 100) : 0;
+    const targetPercent = monthlyTarget > 0 ? Math.round((totalIncome / monthlyTarget) * 100) : 0;
+    const text = `📊 Resumen Financiero • Lemus Studio\n` +
+      `--------------------------------\n` +
+      `🎯 Meta del mes: ${formatGTQ(monthlyTarget)}\n` +
+      `💰 Ingresos recaudados: ${formatGTQ(totalIncome)} (${targetPercent}% de la meta)\n` +
+      `💸 Gastos operativos: ${formatGTQ(totalExpenses)}\n` +
+      `📈 Margen Neto disponible: ${formatGTQ(netProfit)} (${marginPercent}% de rentabilidad)\n` +
+      `📂 Movimientos registrados: ${transactions.length}\n` +
+      `📅 Fecha de corte: ${formatDate(getTodayString())}`;
+
+    navigator.clipboard.writeText(text);
+    addToast('📋 Resumen financiero copiado al portapapeles listo para compartir.', 'success');
+  };
+
   const confirmDeleteTransaction = () => {
     if (!txToDelete) return;
     const id = txToDelete.id;
@@ -294,6 +313,10 @@ export default function App() {
             setCalendarDefaultDate(savedEvt.fecha);
           }
         }}
+      />
+      <ModalMonthlyTarget
+        isOpen={modalTargetOpen}
+        onClose={() => setModalTargetOpen(false)}
       />
 
       {/* MARCO PRINCIPAL VIDRIO FROSTED (ESTILO iDraft BENTO) */}
@@ -765,33 +788,63 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* 3. PROGRESO DEL MES & DESCARGA EXCEL */}
-                <div className="idraft-card-white p-6 flex flex-col justify-between">
-                  <div className="flex items-center justify-between">
+                {/* 3. META & RENDIMIENTO REAL DEL MES */}
+                <div className="idraft-card-white p-6 flex flex-col justify-between space-y-3">
+                  <div className="flex items-start justify-between gap-3">
                     <div>
-                      <h3 className="text-sm font-bold text-neutral-900 font-display">Progreso del Mes</h3>
-                      <span className="text-[11px] text-emerald-600 font-bold block mt-0.5">
-                        +20% comparado con el mes anterior*
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-sm font-bold text-neutral-900 font-display">
+                          Meta & Rendimiento
+                        </h3>
+                        <button
+                          onClick={() => setModalTargetOpen(true)}
+                          title="Ajustar meta mensual"
+                          className="p-1 rounded-lg text-neutral-400 hover:text-black hover:bg-neutral-100 transition"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+
+                      {/* Estado dinámico real con matemática */}
+                      <span className="text-[11px] text-neutral-500 font-medium block mt-0.5">
+                        {totalIncome >= monthlyTarget ? (
+                          <span className="text-black font-bold">¡Meta mensual superada! 🎉</span>
+                        ) : (
+                          <span>
+                            Faltan <strong className="text-neutral-900 font-semibold">{formatGTQ(monthlyTarget - totalIncome)}</strong> para la meta
+                          </span>
+                        )}
                       </span>
                     </div>
-                    <div className="p-2 rounded-full bg-neutral-100 text-neutral-600">
-                      <ArrowUpRight className="w-4 h-4" />
+
+                    <div className="text-right">
+                      <span className="text-[10px] text-neutral-400 block font-medium">Meta actual</span>
+                      <span className="text-xs font-bold font-mono text-neutral-900">{formatGTQ(monthlyTarget)}</span>
                     </div>
                   </div>
 
-                  <ConcentricMonthProgress totalIncome={totalIncome} totalExpenses={totalExpenses} />
+                  {/* Componente Gráfico Radial Interactivo con Desglose de Categorías */}
+                  <ConcentricMonthProgress
+                    totalIncome={totalIncome}
+                    totalExpenses={totalExpenses}
+                    monthlyTarget={monthlyTarget}
+                    transactions={transactions}
+                    onCategoryClick={(cat) => setSearchQuery(cat)}
+                  />
 
-                  <div className="flex items-center gap-2 pt-2">
+                  {/* Botonera de acciones útiles */}
+                  <div className="flex items-center gap-2 pt-2 border-t border-neutral-100">
                     <button
-                      onClick={handleExportExcel}
-                      className="p-2.5 rounded-2xl bg-neutral-100 hover:bg-neutral-200 text-neutral-700 transition"
-                      title="Compartir reporte"
+                      onClick={handleCopySummary}
+                      className="p-2.5 rounded-2xl bg-neutral-100 hover:bg-neutral-200 text-neutral-700 hover:text-black transition flex items-center justify-center shrink-0"
+                      title="Copiar balance y resumen financiero para WhatsApp o notas"
                     >
                       <Share2 className="w-4 h-4" />
                     </button>
                     <button
                       onClick={handleExportExcel}
                       className="flex-1 bg-black hover:bg-neutral-800 text-white rounded-2xl py-2.5 px-4 text-xs font-semibold flex items-center justify-center gap-2 shadow-sm transition active:scale-95"
+                      title="Descargar libro contable maestro en Excel"
                     >
                       <Download className="w-3.5 h-3.5" />
                       <span>Descargar Reporte (Excel)</span>

@@ -186,6 +186,9 @@ export const useFinancialStore = create(
       // Saldo base de la tarjeta BAC Credomatic (Saldo exacto: Q 0.00 inicial + 288.00 neto = Q 288.00)
       baseBacBalance: 0.00,
 
+      // Meta de facturación mensual en Quetzales (Q)
+      monthlyTarget: 3000.00,
+
       // --- APUNTES Y METAS DEL MES (100% Persistente y Editable) ---
       monthNotes: '• Recordar enviar cotización de mantenimiento a Santander.\n• Preparar demo de mapa interactivo para el viernes 10:00 AM.\n• Comprar dominio adicional para portafolio Lemus Studio.',
       monthGoals: [
@@ -494,6 +497,10 @@ export const useFinancialStore = create(
       },
 
       // --- ACCIONES DE APUNTES Y METAS ---
+      setMonthlyTarget: (target) => {
+        set({ monthlyTarget: Math.max(0, Number(target) || 0) });
+      },
+
       setMonthNotes: (notes) => {
         set({ monthNotes: notes });
       },
