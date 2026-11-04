@@ -32,11 +32,12 @@ import {
   Menu,
   X,
   BookOpen,
-  Video
+  Video,
+  ArrowRight
 } from 'lucide-react';
 
 import { useFinancialStore } from './store/useFinancialStore';
-import { formatGTQ, formatDate } from './utils/formatters';
+import { formatGTQ, formatDate, getTodayString } from './utils/formatters';
 import { exportToExcel } from './utils/excelExporter';
 import { WeeklyCurveProgress, ConcentricMonthProgress } from './components/FinanceCharts';
 import { ToastContainer } from './components/ToastContainer';
@@ -102,6 +103,11 @@ export default function App() {
   const [modalNotesOpen, setModalNotesOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
 
+  // Estado para el panel de recordatorios ("del día que sea")
+  const [panelReminderDate, setPanelReminderDate] = useState(getTodayString());
+  const [panelReminderMode, setPanelReminderMode] = useState('dia'); // 'dia' | 'proximos'
+  const [quickReminderText, setQuickReminderText] = useState('');
+
   // Estado para eliminar transacciones con confirmación y animación
   const [txToDelete, setTxToDelete] = useState(null);
   const [animatingDeleteTxId, setAnimatingDeleteTxId] = useState(null);
@@ -117,8 +123,43 @@ export default function App() {
   const monthGoals = useFinancialStore((state) => state.monthGoals);
   const toggleMonthGoal = useFinancialStore((state) => state.toggleMonthGoal);
   const toggleEventCompleted = useFinancialStore((state) => state.toggleEventCompleted);
+  const addCalendarEvent = useFinancialStore((state) => state.addCalendarEvent);
+  const deleteCalendarEvent = useFinancialStore((state) => state.deleteCalendarEvent);
   const deleteTransaction = useFinancialStore((state) => state.deleteTransaction);
   const addToast = useFinancialStore((state) => state.addToast);
+
+  const tomorrowStr = useMemo(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }, []);
+
+  const panelDayEvents = useMemo(() => {
+    if (panelReminderMode === 'proximos') {
+      return [...calendarEvents]
+        .filter((e) => !e.completado)
+        .sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+    }
+    return calendarEvents
+      .filter((e) => e.fecha === panelReminderDate)
+      .sort((a, b) => (a.hora_inicio || '').localeCompare(b.hora_inicio || ''));
+  }, [calendarEvents, panelReminderDate, panelReminderMode]);
+
+  const handleQuickAddReminder = (e) => {
+    e.preventDefault();
+    if (!quickReminderText.trim()) return;
+    addCalendarEvent({
+      titulo: quickReminderText.trim(),
+      fecha: panelReminderDate,
+      hora_inicio: '10:00',
+      hora_fin: '11:00',
+      tipo: 'Recordatorio',
+    });
+    setQuickReminderText('');
+  };
 
   // Cálculos financieros
   const totalIncome = useMemo(() => {
@@ -389,25 +430,28 @@ export default function App() {
                 <Download className="w-4 h-4" />
               </button>
 
-              {/* Centro de Notificaciones Bento */}
+              {/* Botón de Campana / Panel de Recordatorios del día que sea */}
               <div className="relative">
                 <button
                   onClick={() => setNotificationsOpen(!notificationsOpen)}
                   className="bg-white hover:bg-neutral-50 text-neutral-700 p-2.5 rounded-full border border-neutral-200/80 shadow-sm transition relative active:scale-95"
-                  title="Centro de Notificaciones"
+                  title="Panel de Recordatorios"
                 >
                   <Bell className="w-4 h-4" />
-                  <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-black ring-2 ring-white animate-pulse" />
+                  {panelDayEvents.filter((e) => !e.completado).length > 0 && (
+                    <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-black ring-2 ring-white animate-pulse" />
+                  )}
                 </button>
 
-                {/* Popover desplegable estilo Bento */}
+                {/* Popover desplegable: Panel de Recordatorios del día que sea */}
                 {notificationsOpen && (
                   <>
                     <div 
                       className="fixed inset-0 z-40" 
                       onClick={() => setNotificationsOpen(false)} 
                     />
-                    <div className="absolute right-0 top-12 z-50 w-80 sm:w-96 bg-white/95 backdrop-blur-2xl border border-neutral-200/90 rounded-[26px] shadow-[0_25px_60px_-15px_rgba(0,0,0,0.25)] p-5 text-neutral-900 animate-in fade-in zoom-in-95 duration-150">
+                    <div className="absolute right-0 top-12 z-50 w-84 sm:w-[430px] bg-white/95 backdrop-blur-2xl border border-neutral-200/90 rounded-[28px] shadow-[0_25px_60px_-15px_rgba(0,0,0,0.25)] p-5 text-neutral-900 animate-in fade-in zoom-in-95 duration-150">
+                      
                       {/* Cabecera */}
                       <div className="flex items-center justify-between pb-3 border-b border-neutral-100">
                         <div className="flex items-center gap-2.5">
@@ -415,138 +459,206 @@ export default function App() {
                             <Bell className="w-4 h-4" />
                           </div>
                           <div>
-                            <h3 className="text-sm font-bold text-neutral-900 leading-tight">Centro de Notificaciones</h3>
-                            <p className="text-[11px] text-neutral-400">Lemus Studio • Suite privada</p>
+                            <h3 className="text-sm font-bold text-neutral-900 leading-tight">Panel de Recordatorios</h3>
+                            <p className="text-[11px] text-neutral-400">Agenda y notas del día • Lemus Studio</p>
                           </div>
                         </div>
                         <button
                           onClick={() => setNotificationsOpen(false)}
                           className="p-1 text-neutral-400 hover:text-black hover:bg-neutral-100 rounded-lg transition"
-                          title="Cerrar"
+                          title="Cerrar panel"
                         >
                           <X className="w-4 h-4" />
                         </button>
                       </div>
 
-                      {/* Lista de Notificaciones y Alertas del Sistema */}
-                      <div className="mt-3.5 space-y-2.5 max-h-[380px] overflow-y-auto pr-1">
-                        {/* 1. Alerta de Cita más próxima */}
-                        {upcomingEvents.length > 0 && (
-                          <div
-                            onClick={() => {
-                              setActiveTab('calendario');
-                              setNotificationsOpen(false);
-                            }}
-                            className="p-3 rounded-2xl bg-neutral-50 hover:bg-neutral-100 border border-neutral-200/60 transition cursor-pointer group"
-                          >
-                            <div className="flex items-center justify-between">
-                              <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 font-mono">
-                                📅 Próxima Cita
-                              </span>
-                              <span className="text-[10px] bg-black text-white px-2 py-0.5 rounded-full font-semibold">
-                                {upcomingEvents[0].fecha}
-                              </span>
-                            </div>
-                            <h4 className="text-xs font-bold text-neutral-900 mt-1 group-hover:text-neutral-700">
-                              {upcomingEvents[0].titulo}
-                            </h4>
-                            <p className="text-[11px] text-neutral-500 mt-0.5 flex items-center gap-1.5">
-                              <span>⏰ {upcomingEvents[0].hora_inicio} - {upcomingEvents[0].hora_fin}</span>
-                              {upcomingEvents[0].cliente && <span>• {upcomingEvents[0].cliente}</span>}
-                            </p>
+                      {/* Selector de fecha: "del día que sea" */}
+                      <div className="mt-3 space-y-2">
+                        <div className="flex items-center justify-between gap-1.5 flex-wrap">
+                          <div className="flex items-center gap-1 bg-neutral-100 p-1 rounded-xl text-xs font-semibold">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setPanelReminderDate(getTodayString());
+                                setPanelReminderMode('dia');
+                              }}
+                              className={`px-2.5 py-1 rounded-lg transition ${
+                                panelReminderMode === 'dia' && panelReminderDate === getTodayString()
+                                  ? 'bg-black text-white shadow-sm'
+                                  : 'text-neutral-600 hover:text-black'
+                              }`}
+                            >
+                              Hoy
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setPanelReminderDate(tomorrowStr);
+                                setPanelReminderMode('dia');
+                              }}
+                              className={`px-2.5 py-1 rounded-lg transition ${
+                                panelReminderMode === 'dia' && panelReminderDate === tomorrowStr
+                                  ? 'bg-black text-white shadow-sm'
+                                  : 'text-neutral-600 hover:text-black'
+                              }`}
+                            >
+                              Mañana
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setPanelReminderMode('proximos')}
+                              className={`px-2.5 py-1 rounded-lg transition ${
+                                panelReminderMode === 'proximos'
+                                  ? 'bg-black text-white shadow-sm'
+                                  : 'text-neutral-600 hover:text-black'
+                              }`}
+                            >
+                              Próximos
+                            </button>
                           </div>
-                        )}
 
-                        {/* 2. Saldo BAC y Finanzas */}
-                        <div
-                          onClick={() => {
-                            setActiveTab('dashboard');
-                            setNotificationsOpen(false);
-                          }}
-                          className="p-3 rounded-2xl bg-neutral-50 hover:bg-neutral-100 border border-neutral-200/60 transition cursor-pointer group"
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 font-mono">
-                              💳 Estado Financiero
-                            </span>
-                            <span className="text-[10px] text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full font-bold">
-                              Al día
-                            </span>
+                          {/* Selector de fecha personalizado (el día que sea) */}
+                          <div className="flex items-center gap-1.5">
+                            <input
+                              type="date"
+                              value={panelReminderDate}
+                              onChange={(e) => {
+                                setPanelReminderDate(e.target.value);
+                                setPanelReminderMode('dia');
+                              }}
+                              className="text-xs bg-neutral-100 hover:bg-neutral-200/80 text-neutral-900 font-bold px-2.5 py-1 rounded-xl border border-neutral-200 focus:outline-none cursor-pointer transition font-mono"
+                              title="Elige cualquier fecha"
+                            />
                           </div>
-                          <h4 className="text-xs font-bold text-neutral-900 mt-1">
-                            Saldo Disponible: {formatGTQ(bacBalance)}
-                          </h4>
-                          <p className="text-[11px] text-neutral-500 mt-0.5">
-                            Cuenta BAC Credomatic con {transactions.length} movimientos registrados.
-                          </p>
                         </div>
 
-                        {/* 3. Avance de Proyectos */}
-                        {projects.length > 0 && (
-                          <div
-                            onClick={() => {
-                              setActiveTab('proyectos');
-                              setNotificationsOpen(false);
-                            }}
-                            className="p-3 rounded-2xl bg-neutral-50 hover:bg-neutral-100 border border-neutral-200/60 transition cursor-pointer group"
-                          >
-                            <div className="flex items-center justify-between">
-                              <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 font-mono">
-                                🚀 Proyecto Activo
-                              </span>
-                              <span className="text-[10px] bg-neutral-900 text-white px-2 py-0.5 rounded-full font-bold font-numeric">
-                                {projects[0].progreso}%
-                              </span>
-                            </div>
-                            <h4 className="text-xs font-bold text-neutral-900 mt-1">
-                              {projects[0].nombre}
-                            </h4>
-                            <p className="text-[11px] text-neutral-500 mt-0.5">
-                              {projects[0].cliente || 'Inmobiliaria Santander'} • Entrega: {projects[0].fecha_entrega || '15 Nov'}
-                            </p>
-                          </div>
-                        )}
-
-                        {/* 4. Sincronización y Excel */}
-                        <div
-                          onClick={() => {
-                            handleExportExcel();
-                            setNotificationsOpen(false);
-                          }}
-                          className="p-3 rounded-2xl bg-neutral-50 hover:bg-neutral-100 border border-neutral-200/60 transition cursor-pointer group"
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 font-mono">
-                              📗 Respaldo Master
+                        {/* Banner del día seleccionado */}
+                        <div className="flex items-center justify-between px-1 py-1">
+                          <span className="text-xs font-bold text-neutral-800 flex items-center gap-1.5">
+                            <CalendarIcon className="w-3.5 h-3.5 text-neutral-500" />
+                            <span>
+                              {panelReminderMode === 'proximos'
+                                ? 'Próximos recordatorios activos'
+                                : `Recordatorios: ${formatDate(panelReminderDate)}`}
                             </span>
-                            <span className="text-[10px] text-neutral-600 bg-white border border-neutral-200 px-2 py-0.5 rounded-full font-semibold">
-                              ExcelJS
-                            </span>
-                          </div>
-                          <h4 className="text-xs font-bold text-neutral-900 mt-1">
-                            Sincronización para Google Sheets / Excel
-                          </h4>
-                          <p className="text-[11px] text-neutral-500 mt-0.5">
-                            Haz clic para descargar el libro con tablas corporativas.
-                          </p>
+                          </span>
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-700">
+                            {panelDayEvents.filter((e) => !e.completado).length} pendientes
+                          </span>
                         </div>
                       </div>
 
-                      {/* Pie con enlace rápido */}
+                      {/* Formulario rápido para agregar recordatorio para esta fecha */}
+                      <form onSubmit={handleQuickAddReminder} className="mt-2 flex items-center gap-2 bg-neutral-50 hover:bg-white border border-neutral-200/80 focus-within:border-black rounded-2xl p-1.5 transition shadow-sm">
+                        <input
+                          type="text"
+                          placeholder={`+ Añadir recordatorio para ${panelReminderMode === 'proximos' ? 'la fecha' : formatDate(panelReminderDate)}...`}
+                          value={quickReminderText}
+                          onChange={(e) => setQuickReminderText(e.target.value)}
+                          className="bg-transparent text-xs text-neutral-900 placeholder-neutral-400 px-2.5 py-1 flex-1 focus:outline-none"
+                        />
+                        <button
+                          type="submit"
+                          className="px-3 py-1.5 bg-black text-white rounded-xl text-xs font-bold hover:bg-neutral-800 transition active:scale-95 shrink-0 shadow-sm"
+                        >
+                          + Agregar
+                        </button>
+                      </form>
+
+                      {/* Lista interactiva de recordatorios con tachado, hora, videollamada y eliminación */}
+                      <div className="mt-3 space-y-2 max-h-[300px] overflow-y-auto pr-1">
+                        {panelDayEvents.length === 0 ? (
+                          <div className="py-8 text-center flex flex-col items-center justify-center text-neutral-400 bg-neutral-50/70 rounded-2xl border border-neutral-100 p-4">
+                            <Clock className="w-7 h-7 mb-1.5 text-neutral-300" />
+                            <p className="text-xs font-bold text-neutral-700">No hay recordatorios para esta fecha</p>
+                            <p className="text-[11px] text-neutral-400 mt-0.5">Escribe arriba para guardar una nota o cita rápida.</p>
+                          </div>
+                        ) : (
+                          panelDayEvents.map((evt) => (
+                            <div
+                              key={evt.id}
+                              className="p-3 rounded-2xl bg-neutral-50 hover:bg-white border border-neutral-200/70 hover:shadow-md transition flex items-center justify-between gap-2.5 group"
+                            >
+                              <div className="flex items-center gap-2.5 min-w-0">
+                                <button
+                                  type="button"
+                                  onClick={() => toggleEventCompleted(evt.id)}
+                                  className="text-neutral-900 transition shrink-0"
+                                  title="Marcar como completado"
+                                >
+                                  {evt.completado ? (
+                                    <CheckCircle2 className="w-4 h-4 fill-black text-white" />
+                                  ) : (
+                                    <Circle className="w-4 h-4 text-neutral-300 hover:text-black" />
+                                  )}
+                                </button>
+                                <div className="min-w-0">
+                                  <span
+                                    className={`text-xs font-bold block truncate ${
+                                      evt.completado ? 'line-through text-neutral-400' : 'text-neutral-900'
+                                    }`}
+                                  >
+                                    {evt.titulo}
+                                  </span>
+                                  <span className="text-[10px] text-neutral-400 flex items-center gap-1.5 mt-0.5">
+                                    <span className="font-mono font-semibold text-neutral-600">{evt.hora_inicio || 'Horario'}</span>
+                                    <span>•</span>
+                                    <span>{evt.tipo || 'Recordatorio'}</span>
+                                    {panelReminderMode === 'proximos' && (
+                                      <>
+                                        <span>•</span>
+                                        <span className="font-bold text-neutral-700">{formatDate(evt.fecha)}</span>
+                                      </>
+                                    )}
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                {evt.enlace && (
+                                  <a
+                                    href={evt.enlace}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="p-1 rounded-lg bg-black text-white hover:bg-neutral-800 transition"
+                                    title="Unirse a reunión"
+                                  >
+                                    <Video className="w-3 h-3" />
+                                  </a>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => deleteCalendarEvent(evt.id)}
+                                  className="p-1 text-neutral-300 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
+                                  title="Eliminar recordatorio"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+
+                      {/* Pie del panel con acceso al calendario completo */}
                       <div className="pt-3 mt-3 border-t border-neutral-100 flex items-center justify-between">
-                        <span className="text-[11px] text-neutral-400">
-                          {toasts.length > 0 ? `${toasts.length} avisos recientes` : 'Sistema en línea'}
+                        <span className="text-[11px] text-neutral-400 font-medium">
+                          {calendarEvents.filter((e) => !e.completado).length} pendientes en total
                         </span>
                         <button
+                          type="button"
                           onClick={() => {
+                            setCalendarDefaultDate(panelReminderDate);
                             setActiveTab('calendario');
                             setNotificationsOpen(false);
                           }}
-                          className="text-xs font-bold text-neutral-900 hover:underline"
+                          className="text-xs font-bold text-neutral-900 hover:underline flex items-center gap-1"
                         >
-                          Abrir Calendario →
+                          <span>Ver Calendario</span>
+                          <ArrowRight className="w-3 h-3" />
                         </button>
                       </div>
+
                     </div>
                   </>
                 )}
