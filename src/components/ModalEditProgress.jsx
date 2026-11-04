@@ -36,31 +36,30 @@ export const ModalEditProgress = ({ isOpen, onClose, project }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-150">
-      <div className="w-full max-w-md bg-[#11212D] border border-[#253745] rounded-2xl shadow-2xl p-6 relative text-[#CCD0CF] overflow-hidden">
-        {/* Glow ambient */}
-        <div className="absolute top-0 right-0 w-36 h-36 bg-[#00E5FF]/10 rounded-full blur-3xl pointer-events-none" />
-
-        <div className="flex items-center justify-between pb-4 border-b border-[#253745]">
+      <div className="w-full max-w-md bg-white border border-neutral-200 rounded-3xl shadow-2xl p-6 relative text-neutral-900 overflow-hidden">
+        
+        {/* Header */}
+        <div className="flex items-center justify-between pb-4 border-b border-neutral-100">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-[#00E5FF]/10 border border-[#00E5FF]/30 text-[#00E5FF] flex items-center justify-center">
+            <div className="w-10 h-10 rounded-2xl bg-black text-white flex items-center justify-center shadow-md">
               <Sliders className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base font-bold font-display text-white">Editar Progreso</h2>
-              <p className="text-xs text-[#9BA8AB] truncate max-w-[240px]">{project.nombre}</p>
+              <h2 className="text-base font-bold font-display text-neutral-900">Editar Progreso</h2>
+              <p className="text-xs text-neutral-500 truncate max-w-[240px]">{project.nombre}</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-1.5 text-[#9BA8AB] hover:text-white rounded-lg hover:bg-[#253745]/50 transition-colors">
+          <button onClick={onClose} className="p-1.5 text-neutral-400 hover:text-black rounded-lg hover:bg-neutral-100 transition">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="mt-5 space-y-4 text-xs">
           {/* Slider de Progreso */}
-          <div className="bg-[#06141B] p-4 rounded-xl border border-[#253745] space-y-3">
+          <div className="bg-neutral-50 p-4 rounded-2xl border border-neutral-200/80 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-[#9BA8AB] font-medium">Porcentaje Completado:</span>
-              <span className="text-lg font-bold font-numeric text-white bg-[#11212D] px-2.5 py-0.5 rounded-lg border border-[#253745]">
+              <span className="text-neutral-600 font-semibold">Porcentaje Completado:</span>
+              <span className="text-lg font-bold font-numeric text-black bg-white px-3 py-0.5 rounded-xl border border-neutral-200 shadow-sm">
                 {progreso}%
               </span>
             </div>
@@ -68,71 +67,64 @@ export const ModalEditProgress = ({ isOpen, onClose, project }) => {
               type="range"
               min="0"
               max="100"
-              step="5"
               value={progreso}
-              onChange={(e) => {
-                const val = parseInt(e.target.value, 10);
-                setProgreso(val);
-                if (val === 100) setEstado('Finalizado');
-              }}
-              className="w-full h-2.5 bg-[#253745] rounded-lg appearance-none cursor-pointer accent-[#00E5FF]"
+              onChange={(e) => setProgreso(e.target.value)}
+              className="w-full h-2 bg-neutral-200 rounded-lg appearance-none cursor-pointer accent-black"
             />
-            <div className="flex justify-between text-[10px] text-[#9BA8AB]/70 font-mono">
+            <div className="flex justify-between text-[10px] text-neutral-400 font-mono">
               <span>0% Inicio</span>
-              <span>50% Desarrollo</span>
-              <span>100% Finalizado</span>
+              <span>50% Mitad</span>
+              <span>100% Entregado</span>
             </div>
           </div>
 
           {/* Selector de Estado */}
           <div>
-            <label className="block text-[#9BA8AB] font-medium mb-1.5">Estado del Proyecto</label>
+            <label className="block text-[11px] font-semibold text-neutral-700 mb-1.5">
+              Estado del Entregable
+            </label>
             <div className="grid grid-cols-3 gap-2">
-              {[
-                { id: 'En progreso', color: 'border-cyan-500/40 text-cyan-400 bg-cyan-950/20' },
-                { id: 'En revisión', color: 'border-amber-500/40 text-amber-400 bg-amber-950/20' },
-                { id: 'Finalizado', color: 'border-emerald-500/40 text-emerald-400 bg-emerald-950/20' },
-              ].map((st) => (
+              {['En progreso', 'En revisión', 'Finalizado'].map((st) => (
                 <button
+                  key={st}
                   type="button"
-                  key={st.id}
-                  onClick={() => setEstado(st.id)}
-                  className={`py-2 px-1 rounded-xl text-center border font-medium transition-all ${
-                    estado === st.id
-                      ? `${st.color} font-bold ring-1 ring-white/20`
-                      : 'bg-[#06141B] border-[#253745] text-[#9BA8AB] hover:text-[#CCD0CF]'
+                  onClick={() => setEstado(st)}
+                  className={`py-2 px-2 rounded-xl text-xs font-semibold border transition ${
+                    estado === st
+                      ? 'bg-black text-white border-black shadow-sm'
+                      : 'bg-white text-neutral-600 border-neutral-200 hover:border-neutral-400'
                   }`}
                 >
-                  {st.id}
+                  {st}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Botones de acción */}
-          <div className="flex items-center justify-between gap-3 pt-4 border-t border-[#253745]">
+          {/* Acciones */}
+          <div className="pt-4 border-t border-neutral-100 flex items-center justify-between gap-3">
             <button
               type="button"
               onClick={handleDelete}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-rose-400 bg-rose-950/30 hover:bg-rose-950/60 border border-rose-800/40 transition-colors text-xs font-semibold"
+              className="px-3 py-2.5 rounded-xl text-rose-600 hover:bg-rose-50 border border-rose-200 font-semibold flex items-center gap-1.5 transition"
             >
-              <Trash2 className="w-3.5 h-3.5" />
-              <span>Eliminar Proyecto</span>
+              <Trash2 className="w-4 h-4" />
+              <span>Eliminar</span>
             </button>
 
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-3 py-2 rounded-xl text-[#9BA8AB] hover:text-white transition-colors text-xs font-medium"
+                className="px-4 py-2.5 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-700 font-semibold transition"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 rounded-xl bg-[#00E5FF] text-[#06141B] font-bold text-xs hover:bg-[#00E5FF]/90 transition-all shadow-glow-cyan"
+                className="px-5 py-2.5 rounded-xl bg-black hover:bg-neutral-800 text-white font-bold shadow-md transition active:scale-95"
               >
-                Guardar
+                Guardar Cambios
               </button>
             </div>
           </div>
