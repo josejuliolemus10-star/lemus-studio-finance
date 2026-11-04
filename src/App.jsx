@@ -1,46 +1,42 @@
 import React, { useState, useMemo } from 'react';
 import {
   LayoutDashboard,
-  FileText,
+  Calendar as CalendarIcon,
   Briefcase,
   Users,
+  Globe,
   Settings,
   Search,
   Bell,
-  ChevronDown,
-  CreditCard,
+  Plus,
+  Share2,
+  MoreVertical,
+  Download,
+  CheckCircle2,
+  Circle,
+  Clock,
+  Edit3,
+  Gift,
+  Volume2,
+  Trash2,
   ArrowUpRight,
   ArrowDownRight,
-  TrendingUp,
-  Server,
-  Globe,
-  Code2,
-  Moon,
-  Sun,
-  LogOut,
-  Plus,
-  Menu,
-  X,
-  Eye,
-  EyeOff,
-  Wifi,
-  Trash2,
-  Calendar as CalendarIcon,
+  ExternalLink,
+  ChevronDown,
   Layers,
-  HelpCircle,
-  Inbox,
   Sparkles,
-  FileSpreadsheet,
-  Download,
-  Clock,
-  Video,
-  ExternalLink
+  CreditCard,
+  SlidersHorizontal,
+  Grid,
+  List,
+  Menu,
+  X
 } from 'lucide-react';
 
 import { useFinancialStore } from './store/useFinancialStore';
 import { formatGTQ, formatDate } from './utils/formatters';
 import { exportToExcel } from './utils/excelExporter';
-import { BarChartMonthly, DonutCategories } from './components/FinanceCharts';
+import { WeeklyCurveProgress, ConcentricMonthProgress } from './components/FinanceCharts';
 import { ToastContainer } from './components/ToastContainer';
 import { ModalTransaction } from './components/ModalTransaction';
 import { ModalProject } from './components/ModalProject';
@@ -55,66 +51,61 @@ import { WebsitesView } from './views/WebsitesView';
 import { CalendarView } from './views/CalendarView';
 import { SettingsView } from './views/SettingsView';
 
-// --- LOGO VECTORIAL DE LEMUS STUDIO (Black & White Minimalist) ---
-export const LemusLogo = ({ className = "h-9", showText = true }) => {
-  const [imgError, setImgError] = useState(false);
-
+// --- LOGO VECTORIAL DE LEMUS STUDIO (iDraft Style) ---
+export const LemusLogo = ({ className = "h-8" }) => {
   return (
     <div className={`flex items-center gap-3 select-none ${className}`}>
-      <div className="relative w-9 h-9 rounded-xl bg-black border border-[#242424] flex items-center justify-center p-1 overflow-hidden shadow-sm hover:border-white transition-colors shrink-0">
-        {!imgError ? (
-          <img
-            src="/lemus-icon.jpg"
-            alt="Lemus Studio"
-            onError={() => setImgError(true)}
-            className="w-full h-full object-contain filter contrast-125"
-          />
-        ) : (
-          <svg viewBox="0 0 100 100" className="w-full h-full text-white" fill="none" stroke="currentColor" strokeWidth="10">
-            <rect x="8" y="8" width="84" height="84" strokeWidth="8" />
-            <path d="M26 80 L52 20" strokeWidth="8" />
-            <path d="M26 80 L62 58 L80 78" strokeWidth="8" />
-          </svg>
-        )}
+      <div className="w-9 h-9 rounded-2xl bg-black flex items-center justify-center p-1.5 shadow-md shrink-0">
+        <svg viewBox="0 0 100 100" className="w-full h-full text-white" fill="none" stroke="currentColor" strokeWidth="10">
+          <rect x="8" y="8" width="84" height="84" strokeWidth="8" rx="8" />
+          <path d="M26 80 L52 20" strokeWidth="8" strokeLinecap="round" />
+          <path d="M26 80 L62 58 L80 78" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
       </div>
-
-      {showText && (
-        <div className="flex flex-col">
-          <span className="text-[17px] font-bold tracking-tight text-white leading-tight font-display">
-            Lemus <span className="font-normal text-[#A1A1AA]">Studio</span>
-          </span>
-          <span className="text-[10px] uppercase tracking-widest text-[#71717A] font-medium font-mono">
-            Suite Black & White
-          </span>
-        </div>
-      )}
+      <div className="flex flex-col">
+        <span className="text-[17px] font-extrabold tracking-tight text-neutral-900 leading-tight font-display">
+          Lemus<span className="font-light text-neutral-500">Studio</span>
+        </span>
+        <span className="text-[9px] uppercase tracking-widest text-neutral-400 font-semibold">
+          Financial Suite
+        </span>
+      </div>
     </div>
   );
 };
 
 export default function App() {
-  // Navigation & UI States
   const [activeTab, setActiveTab] = useState('dashboard');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [showCardNumber, setShowCardNumber] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [txFilterType, setTxFilterType] = useState('Todos');
 
-  // Modals States
+  // Metas interactivas del mes (Checkbox toggleable)
+  const [monthGoals, setMonthGoals] = useState([
+    { id: 1, text: 'Cobro anticipo 50% Inmobiliaria Santander', completed: true },
+    { id: 2, text: 'Compra de micrófono para setup oficina', completed: true },
+    { id: 3, text: 'Entregar maqueta frontend Santander', completed: false },
+    { id: 4, text: 'Cotizar nueva web para Café Despierto', completed: false },
+  ]);
+
+  const toggleGoal = (id) => {
+    setMonthGoals(prev => prev.map(g => g.id === id ? { ...g, completed: !g.completed } : g));
+  };
+
+  // Modales
   const [modalTxOpen, setModalTxOpen] = useState(false);
   const [modalProjOpen, setModalProjOpen] = useState(false);
   const [modalClientOpen, setModalClientOpen] = useState(false);
   const [modalEditProgOpen, setModalEditProgOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState(null);
 
-  // New Modals: Websites & Calendar
   const [modalWebOpen, setModalWebOpen] = useState(false);
   const [selectedWebsiteToEdit, setSelectedWebsiteToEdit] = useState(null);
   const [modalCalOpen, setModalCalOpen] = useState(false);
   const [selectedEventToEdit, setSelectedEventToEdit] = useState(null);
   const [calendarDefaultDate, setCalendarDefaultDate] = useState(null);
 
-  // Global State (Zustand + LocalStorage)
+  // Store
   const transactions = useFinancialStore((state) => state.transactions);
   const projects = useFinancialStore((state) => state.projects);
   const clients = useFinancialStore((state) => state.clients);
@@ -124,31 +115,23 @@ export default function App() {
   const deleteTransaction = useFinancialStore((state) => state.deleteTransaction);
   const addToast = useFinancialStore((state) => state.addToast);
 
-  // --- CÁLCULOS FINANCIEROS EN TIEMPO REAL ---
+  // Cálculos financieros
   const totalIncome = useMemo(() => {
-    return transactions
-      .filter((t) => t.tipo === 'ingreso')
-      .reduce((sum, t) => sum + t.monto, 0);
+    return transactions.filter((t) => t.tipo === 'ingreso').reduce((sum, t) => sum + t.monto, 0);
   }, [transactions]);
 
   const totalExpenses = useMemo(() => {
-    return transactions
-      .filter((t) => t.tipo === 'gasto')
-      .reduce((sum, t) => sum + t.monto, 0);
+    return transactions.filter((t) => t.tipo === 'gasto').reduce((sum, t) => sum + t.monto, 0);
   }, [transactions]);
 
   const netProfit = totalIncome - totalExpenses;
   const bacBalance = (baseBacBalance || 0) + netProfit;
-  const netMargin = totalIncome > 0 ? ((netProfit / totalIncome) * 100).toFixed(1) + '%' : '0.0%';
 
-  // Transacciones ordenadas por fecha más reciente
+  // Transacciones ordenadas
   const sortedTransactions = useMemo(() => {
-    return [...transactions].sort((a, b) => {
-      return new Date(b.fecha || 0) - new Date(a.fecha || 0);
-    });
+    return [...transactions].sort((a, b) => new Date(b.fecha || 0) - new Date(a.fecha || 0));
   }, [transactions]);
 
-  // Filtro de búsqueda y tipo de movimiento
   const filteredTransactions = useMemo(() => {
     let list = sortedTransactions;
     if (txFilterType === 'ingreso') list = list.filter((t) => t.tipo === 'ingreso');
@@ -158,11 +141,10 @@ export default function App() {
     return list.filter((t) =>
       t.motivo.toLowerCase().includes(searchQuery.toLowerCase()) ||
       t.categoria?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      t.id_cliente_o_proveedor?.toLowerCase().includes(searchQuery.toLowerCase())
+      t.subinfo?.toLowerCase().includes(searchQuery.toLowerCase())
     );
   }, [searchQuery, sortedTransactions, txFilterType]);
 
-  // Exportar Excel
   const handleExportExcel = () => {
     exportToExcel({
       transactions,
@@ -174,57 +156,28 @@ export default function App() {
     addToast('📊 Libro de Excel descargado listo para Google Sheets.', 'success');
   };
 
-  // Items de navegación lateral
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'websites', label: 'Páginas Web', icon: Globe, count: String(websites.length) },
-    { id: 'calendario', label: 'Calendario & Citas', icon: CalendarIcon, count: String(calendarEvents.length) },
+    { id: 'calendario', label: 'Calendario', icon: CalendarIcon, count: String(calendarEvents.length) },
     { id: 'proyectos', label: 'Proyectos', icon: Briefcase, count: String(projects.length) },
     { id: 'clientes', label: 'Clientes CRM', icon: Users, count: String(clients.length) },
-    { id: 'cotizaciones', label: 'Cotizaciones', icon: FileText, count: '3' },
-    { id: 'configuracion', label: 'Configuración & Excel', icon: Settings },
+    { id: 'websites', label: 'Páginas Web', icon: Globe, count: String(websites.length) },
+    { id: 'configuracion', label: 'Configuración', icon: Settings },
   ];
 
-  const handleOpenEditProgress = (proj) => {
-    setSelectedProject(proj);
-    setModalEditProgOpen(true);
-  };
-
-  const handleOpenWebsiteModal = (web = null) => {
-    setSelectedWebsiteToEdit(web);
-    setModalWebOpen(true);
-  };
-
-  const handleOpenCalendarModal = (eventOrDate = null) => {
-    if (typeof eventOrDate === 'string') {
-      setCalendarDefaultDate(eventOrDate);
-      setSelectedEventToEdit(null);
-    } else if (eventOrDate && typeof eventOrDate === 'object') {
-      setSelectedEventToEdit(eventOrDate);
-      setCalendarDefaultDate(null);
-    } else {
-      setSelectedEventToEdit(null);
-      setCalendarDefaultDate(null);
-    }
-    setModalCalOpen(true);
-  };
-
   return (
-    <div className="min-h-screen bg-[#000000] text-white flex font-sans antialiased overflow-x-hidden selection:bg-white selection:text-black">
-      {/* Toast Alert Notifications */}
+    <div className="min-h-screen py-4 px-2 sm:px-4 lg:px-6 flex items-center justify-center">
       <ToastContainer />
 
-      {/* Floating Action Speed-Dial Button */}
       <FloatingActionButton
         onOpenTransaction={() => setModalTxOpen(true)}
         onOpenProject={() => setModalProjOpen(true)}
         onOpenClient={() => setModalClientOpen(true)}
-        onOpenWebsite={() => handleOpenWebsiteModal()}
-        onOpenCalendar={() => handleOpenCalendarModal()}
+        onOpenWebsite={() => { setSelectedWebsiteToEdit(null); setModalWebOpen(true); }}
+        onOpenCalendar={() => { setSelectedEventToEdit(null); setModalCalOpen(true); }}
         onExportExcel={handleExportExcel}
       />
 
-      {/* Modales */}
       <ModalTransaction isOpen={modalTxOpen} onClose={() => setModalTxOpen(false)} />
       <ModalProject isOpen={modalProjOpen} onClose={() => setModalProjOpen(false)} />
       <ModalClient isOpen={modalClientOpen} onClose={() => setModalClientOpen(false)} />
@@ -245,692 +198,677 @@ export default function App() {
         defaultDate={calendarDefaultDate}
       />
 
-      {/* Mobile Drawer Backdrop */}
-      {mobileMenuOpen && (
-        <div
-          className="fixed inset-0 bg-black/85 backdrop-blur-sm z-40 lg:hidden"
-          onClick={() => setMobileMenuOpen(false)}
-        />
-      )}
+      {/* MARCO PRINCIPAL VIDRIO FROSTED (ESTILO iDraft DE IMAGEN 1) */}
+      <div className="idraft-glass-frame w-full max-w-[1550px] p-4 sm:p-6 lg:p-7 flex flex-col lg:flex-row gap-6">
 
-      {/* ==================== SIDEBAR IZQUIERDO (Black & White) ==================== */}
-      <aside
-        className={`fixed lg:sticky top-0 left-0 h-screen w-64 bg-[#080808] border-r border-[#242424] flex flex-col justify-between p-5 z-50 transition-transform duration-300 ease-in-out ${
-          mobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
-        }`}
-      >
-        <div className="flex flex-col gap-6">
-          {/* Logo Superior */}
-          <div className="flex items-center justify-between pb-4 border-b border-[#242424]">
-            <LemusLogo />
-            <button
-              onClick={() => setMobileMenuOpen(false)}
-              className="lg:hidden p-1.5 text-[#A1A1AA] hover:text-white rounded-lg hover:bg-[#1A1A1A]"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
+        {/* SIDEBAR FLOTANTE (ESTILO BLANCO MINIMALISTA) */}
+        <aside className="w-full lg:w-60 bg-white rounded-[32px] p-6 shadow-sm border border-neutral-200/70 flex flex-col justify-between shrink-0">
+          <div className="space-y-7">
+            {/* Logo */}
+            <div className="flex items-center justify-between">
+              <LemusLogo />
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="lg:hidden p-2 rounded-xl text-neutral-600 hover:bg-neutral-100"
+              >
+                {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              </button>
+            </div>
 
-          {/* Menú Principal */}
-          <nav className="flex flex-col gap-1 text-xs">
-            <span className="text-[10px] font-semibold text-[#71717A] uppercase tracking-wider px-3 mb-1 font-mono">
-              Navegación Principal
-            </span>
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = activeTab === item.id;
-              return (
+            {/* Navigation Links */}
+            <nav className={`space-y-1.5 ${mobileMenuOpen ? 'block' : 'hidden lg:block'}`}>
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = activeTab === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => {
+                      setActiveTab(item.id);
+                      setMobileMenuOpen(false);
+                    }}
+                    className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-xs font-semibold transition-all duration-200 ${
+                      isActive
+                        ? 'bg-black text-white shadow-md'
+                        : 'text-neutral-500 hover:text-black hover:bg-neutral-100/80'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Icon className="w-4 h-4" />
+                      <span>{item.label}</span>
+                    </div>
+                    {item.count && (
+                      <span
+                        className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                          isActive ? 'bg-neutral-800 text-white' : 'bg-neutral-100 text-neutral-600'
+                        }`}
+                      >
+                        {item.count}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </nav>
+
+            {/* INTEGRACIONES (Estilo Image 1) */}
+            <div className="hidden lg:block pt-3 border-t border-neutral-100 space-y-2">
+              <span className="text-[10px] uppercase font-bold tracking-wider text-neutral-400 px-4">
+                Integraciones
+              </span>
+              <div className="space-y-1 text-xs font-medium text-neutral-600">
                 <button
-                  key={item.id}
-                  onClick={() => {
-                    setActiveTab(item.id);
-                    setMobileMenuOpen(false);
-                  }}
-                  className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium transition-all group ${
-                    isActive
-                      ? 'bg-white text-black font-bold shadow-[0_0_15px_rgba(255,255,255,0.15)]'
-                      : 'text-[#A1A1AA] hover:text-white hover:bg-[#141414]'
-                  }`}
+                  onClick={handleExportExcel}
+                  className="w-full flex items-center gap-3 px-4 py-2 rounded-xl hover:bg-neutral-100 text-left transition"
                 >
-                  <div className="flex items-center gap-3">
-                    <Icon
-                      className={`w-4 h-4 transition-colors ${
-                        isActive ? 'text-black' : 'text-[#A1A1AA] group-hover:text-white'
-                      }`}
-                    />
-                    <span>{item.label}</span>
-                  </div>
-                  {item.count && (
-                    <span
-                      className={`text-[10px] px-2 py-0.5 rounded-full font-mono ${
-                        isActive
-                          ? 'bg-black text-white font-bold'
-                          : 'bg-[#1C1C1C] text-[#A1A1AA]'
-                      }`}
-                    >
-                      {item.count}
-                    </span>
-                  )}
+                  <Download className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Google Sheets (Excel)</span>
                 </button>
-              );
-            })}
-          </nav>
-
-          {/* Accesos Rápidos */}
-          <div className="flex flex-col gap-1.5 pt-3 border-t border-[#242424]">
-            <button
-              onClick={() => handleExportExcel()}
-              className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-emerald-400 bg-emerald-950/30 hover:bg-emerald-950/60 border border-emerald-800/40 transition-colors"
-            >
-              <div className="flex items-center gap-2">
-                <FileSpreadsheet className="w-3.5 h-3.5" />
-                <span>Exportar a Excel (.xlsx)</span>
-              </div>
-              <Download className="w-3 h-3" />
-            </button>
-          </div>
-        </div>
-
-        {/* Footer del Sidebar */}
-        <div className="pt-4 border-t border-[#242424] flex flex-col gap-3">
-          <div className="bg-[#0D0D0D] border border-[#242424] p-3 rounded-xl flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-white animate-pulse" />
-              <div className="flex flex-col">
-                <span className="text-xs font-bold text-white">Lemus Cloud</span>
-                <span className="text-[10px] text-[#A1A1AA] font-mono">Black & White Suite</span>
+                <div className="w-full flex items-center gap-3 px-4 py-2 rounded-xl text-neutral-400 text-left">
+                  <div className="w-3.5 h-3.5 rounded bg-neutral-300" />
+                  <span>Slack Notificaciones</span>
+                </div>
               </div>
             </div>
-            <div className="px-2 py-0.5 rounded bg-[#1C1C1C] text-[10px] font-mono text-white">v4.0</div>
-          </div>
-        </div>
-      </aside>
 
-      {/* ==================== ÁREA DE CONTENIDO PRINCIPAL ==================== */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* ==================== HEADER ==================== */}
-        <header className="sticky top-0 bg-[#000000]/90 backdrop-blur-md z-30 px-5 sm:px-8 py-4 border-b border-[#242424] flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3 sm:gap-4">
-            <button
-              onClick={() => setMobileMenuOpen(true)}
-              className="lg:hidden p-2 rounded-xl bg-[#0D0D0D] border border-[#242424] text-white"
-            >
-              <Menu className="w-5 h-5" />
-            </button>
+            {/* EQUIPOS (Estilo Image 1) */}
+            <div className="hidden lg:block pt-2 border-t border-neutral-100 space-y-2">
+              <span className="text-[10px] uppercase font-bold tracking-wider text-neutral-400 px-4">
+                Equipos
+              </span>
+              <div className="space-y-1.5 text-xs px-4">
+                <div className="flex items-center gap-2 text-neutral-700 font-medium">
+                  <span className="w-2 h-2 rounded-full bg-black" />
+                  <span>Desarrollo Web</span>
+                </div>
+                <div className="flex items-center gap-2 text-neutral-400 font-medium">
+                  <span className="w-2 h-2 rounded-full bg-neutral-300" />
+                  <span>UI / UX Design</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* User profile & settings bottom */}
+          <div className="hidden lg:flex items-center gap-3 pt-4 border-t border-neutral-100">
+            <div className="w-10 h-10 rounded-full bg-neutral-900 text-white flex items-center justify-center font-bold text-xs shadow-sm">
+              JL
+            </div>
+            <div className="flex flex-col text-left">
+              <span className="text-xs font-bold text-neutral-900 leading-tight">Julio Lemus</span>
+              <span className="text-[10px] text-neutral-400">Director Creativo</span>
+            </div>
+          </div>
+        </aside>
+
+        {/* CONTENIDO PRINCIPAL */}
+        <main className="flex-1 space-y-6 overflow-hidden">
+          {/* HEADER (Estilo "Hi, Dilan!" -> "Hi, Julio!") */}
+          <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
-              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white font-display flex items-center gap-2">
-                Hola, Julio
-                <span className="hidden sm:inline-block text-xs font-normal px-2.5 py-0.5 rounded-full bg-[#111111] text-[#A1A1AA] border border-[#242424]">
-                  Lemus Studio
-                </span>
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-neutral-900 tracking-tight font-display">
+                Hi, Julio! 👋
               </h1>
-              <p className="text-xs text-[#A1A1AA] hidden sm:block">
-                Dashboard financiero, catálogo de webs y agenda de reuniones
+              <p className="text-xs text-neutral-500 mt-0.5">
+                Dashboard financiero privado • Lemus Studio
               </p>
             </div>
-          </div>
 
-          <div className="flex items-center gap-3 sm:gap-4">
-            {/* Buscador */}
-            <div className="relative w-40 sm:w-64 md:w-72">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#71717A]" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Buscar cliente, web, cita..."
-                className="w-full bg-[#0D0D0D] border border-[#242424] rounded-xl pl-9 pr-8 py-2 text-xs text-white placeholder-[#71717A] focus:outline-none focus:border-white transition-all"
-              />
-              {searchQuery && (
+            {/* Header Right Actions (Estilo Image 1: + Create, Search, Bell, Avatar) */}
+            <div className="flex items-center gap-3 self-end sm:self-auto">
+              <button
+                onClick={() => setModalTxOpen(true)}
+                className="bg-black hover:bg-neutral-800 text-white rounded-full px-5 py-2.5 text-xs font-semibold flex items-center gap-2 shadow-md hover:scale-105 active:scale-95 transition-all"
+              >
+                <Plus className="w-4 h-4" />
+                <span>+ Registrar Movimiento</span>
+              </button>
+
+              <button
+                onClick={handleExportExcel}
+                className="bg-white hover:bg-neutral-50 text-neutral-700 p-2.5 rounded-full border border-neutral-200/80 shadow-sm transition active:scale-95"
+                title="Descargar Excel"
+              >
+                <Download className="w-4 h-4" />
+              </button>
+
+              <div className="relative">
                 <button
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#A1A1AA] hover:text-white"
+                  className="bg-white hover:bg-neutral-50 text-neutral-700 p-2.5 rounded-full border border-neutral-200/80 shadow-sm transition"
+                  title="Notificaciones"
                 >
-                  <X className="w-3.5 h-3.5" />
+                  <Bell className="w-4 h-4" />
+                  <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-amber-500" />
                 </button>
-              )}
-            </div>
+              </div>
 
-            {/* Botón rápido Exportar a Excel */}
-            <button
-              onClick={handleExportExcel}
-              title="Descargar libro de Excel completo (.xlsx)"
-              className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#0D0D0D] hover:bg-[#1A1A1A] text-emerald-400 border border-emerald-800/40 text-xs font-semibold transition-colors"
-            >
-              <FileSpreadsheet className="w-4 h-4" />
-              <span>Excel</span>
-            </button>
-
-            {/* Botón rápido Registrar Movimiento */}
-            <button
-              onClick={() => setModalTxOpen(true)}
-              className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white text-black hover:bg-[#E4E4E7] text-xs font-bold transition-all shadow-[0_0_15px_rgba(255,255,255,0.2)]"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Registrar</span>
-            </button>
-
-            {/* Avatar */}
-            <div className="flex items-center gap-3 pl-2 sm:border-l sm:border-[#242424]">
-              <div className="w-9 h-9 rounded-xl bg-white text-black font-bold text-sm flex items-center justify-center font-display shadow-md">
+              <div className="w-10 h-10 rounded-full bg-black text-white flex items-center justify-center font-bold text-xs shadow-sm border border-neutral-200">
                 JL
               </div>
             </div>
-          </div>
-        </header>
+          </header>
 
-        {/* ==================== VISTA PRINCIPAL / CONDICIONAL ==================== */}
-        <main className="p-5 sm:p-8 space-y-6 max-w-[1600px] w-full mx-auto">
-          {/* TAB 1: DASHBOARD DINÁMICO */}
+          {/* VISTAS CONDICIONALES */}
           {activeTab === 'dashboard' && (
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-
-              {/* COLUMNA CENTRAL */}
-              <div className="lg:col-span-8 space-y-6">
-
-                {/* TARJETAS SUPERIORES DINÁMICAS (Black & White Style) */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                  {/* CARD 1: Ingresos Totales */}
-                  <div className="dashboard-card p-5 relative overflow-hidden group">
-                    <div className="flex items-center justify-between text-xs text-[#A1A1AA] mb-2">
-                      <span className="font-medium tracking-wide">Ingresos Totales (Reales)</span>
-                      <div className="flex items-center gap-1 text-[11px] bg-[#050505] px-2 py-0.5 rounded-md border border-[#242424] text-white">
-                        <span>GTQ</span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-baseline justify-between mt-2">
-                      <div>
-                        <div className="flex items-baseline gap-1.5">
-                          <span className="text-sm font-semibold text-white font-display">Q</span>
-                          <span className="text-2xl sm:text-3xl font-bold text-white font-numeric tracking-tight">
-                            {totalIncome.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1.5 mt-2">
-                          <span className="inline-flex items-center gap-0.5 text-xs font-semibold text-white bg-[#1A1A1A] border border-[#333333] px-2 py-0.5 rounded-md">
-                            <ArrowUpRight className="w-3.5 h-3.5" />
-                            {transactions.filter(t => t.tipo === 'ingreso').length} cobros registrados
-                          </span>
-                        </div>
-                      </div>
-
-                      <button
-                        onClick={() => setModalTxOpen(true)}
-                        title="Agregar ingreso"
-                        className="p-2.5 rounded-xl bg-white text-black hover:bg-[#E4E4E7] transition-all shadow-sm"
-                      >
-                        <Plus className="w-4 h-4" />
+            <div className="space-y-6 animate-fadeIn">
+              {/* FILA SUPERIOR: 3 TARJETAS BENTO (Overall Information, Weekly Progress, Month Progress) */}
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                
+                {/* 1. OVERALL INFORMATION (TARJETA NEGRA PRINCIPAL ESTILO IMAGE 1) */}
+                <div className="idraft-card-dark p-6 flex flex-col justify-between relative overflow-hidden group">
+                  <div className="flex items-center justify-between text-neutral-400">
+                    <span className="text-xs font-semibold text-neutral-300">Overall Information</span>
+                    <div className="flex items-center gap-2">
+                      <button className="p-1 hover:text-white transition">
+                        <Share2 className="w-3.5 h-3.5" />
+                      </button>
+                      <button className="p-1 hover:text-white transition">
+                        <MoreVertical className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   </div>
 
-                  {/* CARD 2: Gastos Totales */}
-                  <div className="dashboard-card p-5 relative overflow-hidden group">
-                    <div className="flex items-center justify-between text-xs text-[#A1A1AA] mb-2">
-                      <span className="font-medium tracking-wide">Gastos Totales (Reales)</span>
-                      <div className="flex items-center gap-1 text-[11px] bg-[#050505] px-2 py-0.5 rounded-md border border-[#242424] text-white">
-                        <span>Operativo</span>
-                      </div>
+                  {/* Saldo BAC Disponible */}
+                  <div className="my-5">
+                    <div className="flex items-baseline gap-3">
+                      <span className="text-3xl sm:text-4xl font-extrabold text-white font-numeric tracking-tight">
+                        {formatGTQ(bacBalance)}
+                      </span>
                     </div>
+                    <span className="text-[11px] text-neutral-400 mt-1 block">
+                      Saldo disponible BAC Credomatic (Business)
+                    </span>
+                  </div>
 
-                    <div className="flex items-baseline justify-between mt-2">
-                      <div>
-                        <div className="flex items-baseline gap-1.5">
-                          <span className="text-sm font-semibold text-[#A1A1AA] font-display">Q</span>
-                          <span className="text-2xl sm:text-3xl font-bold text-[#E4E4E7] font-numeric tracking-tight">
-                            {totalExpenses.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1.5 mt-2">
-                          <span className="inline-flex items-center gap-0.5 text-xs font-semibold text-[#A1A1AA] bg-[#1A1A1A] border border-[#333333] px-2 py-0.5 rounded-md">
-                            <ArrowDownRight className="w-3.5 h-3.5" />
-                            {transactions.filter(t => t.tipo === 'gasto').length} egresos registrados
-                          </span>
-                        </div>
-                      </div>
-
-                      <button
-                        onClick={() => setModalTxOpen(true)}
-                        title="Agregar gasto"
-                        className="p-2.5 rounded-xl bg-[#1F1F1F] text-white hover:bg-[#2A2A2A] border border-[#333333] transition-colors"
-                      >
-                        <Plus className="w-4 h-4" />
-                      </button>
+                  {/* 3 Mini Tarjetas Blancas Internas (Estilo Image 1) */}
+                  <div className="grid grid-cols-3 gap-2.5 pt-2">
+                    <div className="bg-white rounded-2xl p-3 text-neutral-900 text-center shadow-sm">
+                      <span className="text-xs font-bold font-numeric block">{formatGTQ(totalIncome)}</span>
+                      <span className="text-[9px] text-neutral-500 font-medium">Ingresos ({transactions.filter(t => t.tipo === 'ingreso').length})</span>
+                    </div>
+                    <div className="bg-white rounded-2xl p-3 text-neutral-900 text-center shadow-sm">
+                      <span className="text-xs font-bold font-numeric block">{formatGTQ(totalExpenses)}</span>
+                      <span className="text-[9px] text-neutral-500 font-medium">Gastos ({transactions.filter(t => t.tipo === 'gasto').length})</span>
+                    </div>
+                    <div className="bg-white rounded-2xl p-3 text-neutral-900 text-center shadow-sm">
+                      <span className="text-sm font-bold font-numeric block">{projects.length}</span>
+                      <span className="text-[9px] text-neutral-500 font-medium">Proyectos</span>
                     </div>
                   </div>
                 </div>
 
-                {/* GRÁFICA DE BARRAS PRINCIPAL (Recharts Black & White) */}
-                <div className="dashboard-card p-6 relative">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                {/* 2. WEEKLY PROGRESS (TARJETA BLANCA CON CURVA DE FLUJO) */}
+                <div className="idraft-card-white p-6 flex flex-col justify-between">
+                  <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="text-base font-bold text-white font-display flex items-center gap-2">
-                        Comparativa: Ingresos vs Gastos
-                        <span className="text-[11px] font-normal font-mono text-[#A1A1AA]">
-                          (2026)
-                        </span>
-                      </h3>
-                      <p className="text-xs text-[#A1A1AA] mt-0.5">
-                        Margen Neto: <span className="text-white font-bold">{netMargin}</span> • Utilidad Neta: <span className="font-numeric font-bold text-white">{formatGTQ(netProfit)}</span>
-                      </p>
+                      <h3 className="text-sm font-bold text-neutral-900 font-display">Weekly progress</h3>
+                      <div className="flex items-center gap-3 text-[11px] text-neutral-500 mt-1">
+                        <div className="flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-black" />
+                          <span>Ingresos</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-neutral-400" />
+                          <span>Gastos</span>
+                        </div>
+                      </div>
                     </div>
-
-                    <div className="flex items-center gap-4 text-xs font-mono">
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-white shadow-xs" />
-                        <span className="text-white font-medium">Ingresos</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#52525B]" />
-                        <span className="text-[#A1A1AA]">Gastos</span>
-                      </div>
+                    <div className="p-2 rounded-full bg-neutral-100 text-neutral-600">
+                      <Sparkles className="w-4 h-4" />
                     </div>
                   </div>
 
-                  <BarChartMonthly transactions={transactions} />
+                  {/* Gráfica de onda suave con días L M M J V S D */}
+                  <div className="py-1">
+                    <WeeklyCurveProgress transactions={transactions} />
+                  </div>
+
+                  <div className="text-[11px] text-neutral-400 flex items-center justify-between pt-2 border-t border-neutral-100">
+                    <span>M T W T F S S</span>
+                    <span className="font-semibold text-neutral-700">+Q 288.00 Margen Neto</span>
+                  </div>
                 </div>
 
-                {/* ==================== TRANSACCIONES RECIENTES ==================== */}
-                <div className="dashboard-card p-5">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                {/* 3. MONTH PROGRESS (TARJETA BLANCA CON ANILLO RADIAL Y EXCEL BUTTON) */}
+                <div className="idraft-card-white p-6 flex flex-col justify-between">
+                  <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="text-sm font-bold text-white font-display flex items-center gap-2">
-                        Transacciones Recientes
-                        <span className="text-[11px] font-normal text-[#A1A1AA]">
-                          ({filteredTransactions.length} visibles)
-                        </span>
-                      </h3>
-                      <p className="text-[11px] text-[#A1A1AA]">
-                        Registro de cobros y compras con opción para borrar movimientos
-                      </p>
+                      <h3 className="text-sm font-bold text-neutral-900 font-display">Month progress</h3>
+                      <span className="text-[11px] text-emerald-600 font-bold block mt-0.5">
+                        +20% compared to last month*
+                      </span>
+                    </div>
+                    <div className="p-2 rounded-full bg-neutral-100 text-neutral-600">
+                      <ArrowUpRight className="w-4 h-4" />
+                    </div>
+                  </div>
+
+                  {/* Anillos concéntricos de progreso */}
+                  <ConcentricMonthProgress totalIncome={totalIncome} totalExpenses={totalExpenses} />
+
+                  {/* Botón Download Report (Excel) exactamente como en Image 1 */}
+                  <div className="flex items-center gap-2 pt-2">
+                    <button
+                      onClick={handleExportExcel}
+                      className="p-2.5 rounded-2xl bg-neutral-100 hover:bg-neutral-200 text-neutral-700 transition"
+                      title="Compartir reporte"
+                    >
+                      <Share2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={handleExportExcel}
+                      className="flex-1 bg-black hover:bg-neutral-800 text-white rounded-2xl py-2.5 px-4 text-xs font-semibold flex items-center justify-center gap-2 shadow-sm transition active:scale-95"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      <span>Download Report</span>
+                    </button>
+                  </div>
+                </div>
+
+              </div>
+
+              {/* FILA MEDIA: METAS DEL MES + TAREAS EN PROCESO (STICKY CARDS ESTILO IMAGE 1) */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                
+                {/* METAS DEL MES (Left 4 cols) */}
+                <div className="lg:col-span-4 idraft-card-white p-6 flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-sm font-bold text-neutral-900 font-display">Month goals:</h3>
+                      <div className="flex items-center gap-1.5 text-neutral-400">
+                        <Clock className="w-3.5 h-3.5" />
+                        <Edit3 className="w-3.5 h-3.5" />
+                      </div>
                     </div>
 
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <div className="bg-[#050505] p-1 rounded-xl border border-[#242424] flex items-center text-xs">
-                        {[
-                          { id: 'Todos', label: 'Todos' },
-                          { id: 'ingreso', label: '+ Ingresos' },
-                          { id: 'gasto', label: '- Gastos' },
-                        ].map((btn) => (
-                          <button
-                            key={btn.id}
-                            onClick={() => setTxFilterType(btn.id)}
-                            className={`px-2.5 py-1 rounded-lg font-medium transition-all text-[11px] ${
-                              txFilterType === btn.id
-                                ? 'bg-white text-black font-bold'
-                                : 'text-[#A1A1AA] hover:text-white'
+                    <div className="space-y-3">
+                      {monthGoals.map((goal) => (
+                        <div
+                          key={goal.id}
+                          onClick={() => toggleGoal(goal.id)}
+                          className="flex items-start gap-3 cursor-pointer group select-none"
+                        >
+                          <div className="mt-0.5 text-neutral-900 transition transform group-hover:scale-110">
+                            {goal.completed ? (
+                              <CheckCircle2 className="w-4 h-4 fill-black text-white" />
+                            ) : (
+                              <Circle className="w-4 h-4 text-neutral-300 group-hover:text-neutral-500" />
+                            )}
+                          </div>
+                          <span
+                            className={`text-xs leading-snug transition ${
+                              goal.completed
+                                ? 'line-through text-neutral-400 font-normal'
+                                : 'text-neutral-800 font-medium group-hover:text-black'
                             }`}
                           >
-                            {btn.label}
-                          </button>
-                        ))}
-                      </div>
-
-                      <button
-                        onClick={() => setModalTxOpen(true)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white text-black text-xs font-bold hover:bg-[#E4E4E7] transition-all"
-                      >
-                        <Plus className="w-3.5 h-3.5" />
-                        <span>+ Registrar</span>
-                      </button>
+                            {goal.text}
+                          </span>
+                        </div>
+                      ))}
                     </div>
                   </div>
 
-                  {filteredTransactions.length === 0 ? (
-                    <div className="py-10 text-center flex flex-col items-center justify-center">
-                      <div className="w-10 h-10 rounded-xl bg-[#050505] border border-[#242424] flex items-center justify-center text-[#A1A1AA] mb-2.5">
-                        <Inbox className="w-5 h-5" />
-                      </div>
-                      <p className="text-xs font-medium text-white">No hay transacciones registradas</p>
-                      <p className="text-[11px] text-[#A1A1AA] mt-0.5 max-w-xs">
-                        Has iniciado de cero. Haz clic en "Registrar Movimiento" para guardar tu primer cobro o pago de hosting.
-                      </p>
-                      <button
-                        onClick={() => setModalTxOpen(true)}
-                        className="mt-3.5 px-3.5 py-1.5 rounded-lg bg-white text-black text-xs font-bold hover:bg-[#E4E4E7]"
-                      >
-                        + Registrar Primer Movimiento
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="divide-y divide-[#1F1F1F]">
-                      {filteredTransactions.map((tx) => {
-                        const isIncome = tx.tipo === 'ingreso';
-
-                        return (
-                          <div
-                            key={tx.id}
-                            className="py-3 flex items-center justify-between gap-3 hover:bg-[#141414] -mx-2 px-2 rounded-xl transition-colors group"
-                          >
-                            <div className="flex items-center gap-3 min-w-0">
-                              <div
-                                className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border ${
-                                  isIncome
-                                    ? 'bg-white text-black border-white font-bold'
-                                    : 'bg-[#1C1C1C] text-white border-[#333333]'
-                                }`}
-                              >
-                                {isIncome ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
-                              </div>
-
-                              <div className="min-w-0">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-xs font-bold text-white truncate group-hover:text-white transition-colors">
-                                    {tx.motivo}
-                                  </span>
-                                  <span className="text-[9px] px-1.5 py-0.5 rounded font-mono bg-[#1C1C1C] text-[#D4D4D8] border border-[#2A2A2A]">
-                                    {tx.categoria || (isIncome ? 'Ingreso' : 'Gasto')}
-                                  </span>
-                                </div>
-                                <div className="flex items-center gap-2 text-[11px] text-[#A1A1AA] mt-0.5 truncate font-mono">
-                                  <span>{tx.id_cliente_o_proveedor || 'Sin asociar'}</span>
-                                  <span>•</span>
-                                  <span className="text-white flex items-center gap-1">
-                                    <CalendarIcon className="w-3 h-3 text-[#A1A1AA]" />
-                                    {formatDate(tx.fecha)}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-
-                            <div className="flex items-center gap-3 shrink-0">
-                              <div className="text-right">
-                                <span
-                                  className={`text-xs sm:text-sm font-bold font-numeric block ${
-                                    isIncome ? 'text-white' : 'text-[#A1A1AA]'
-                                  }`}
-                                >
-                                  {isIncome ? '+' : '-'} {formatGTQ(tx.monto)}
-                                </span>
-                                <span className="text-[10px] text-[#71717A] font-mono">
-                                  {formatDate(tx.fecha)}
-                                </span>
-                              </div>
-
-                              {/* Botón de Borrar Transacción Visible y Funcional */}
-                              <button
-                                onClick={() => {
-                                  if (window.confirm(`¿Estás seguro de que deseas eliminar este movimiento?\n\n"${tx.motivo}" (${isIncome ? '+' : '-'}${formatGTQ(tx.monto)})`)) {
-                                    deleteTransaction(tx.id);
-                                  }
-                                }}
-                                title="Eliminar este movimiento"
-                                className="p-2 rounded-xl text-[#71717A] hover:text-rose-400 hover:bg-rose-950/40 border border-[#242424] hover:border-rose-800/60 transition-all flex items-center justify-center"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-
-              </div>
-
-              {/* PANEL DERECHO (BAC CREDOMATIC + DONUT CHART + PROYECTOS / CITAS) */}
-              <div className="lg:col-span-4 space-y-6">
-
-                {/* ==================== TARJETA BAC CREDOMATIC MOCKUP (Saldo Inicia en 0.00) ==================== */}
-                <div className="dashboard-card p-5 relative overflow-hidden">
-                  <div className="flex items-center justify-between mb-3 text-xs">
-                    <div className="flex items-center gap-2">
-                      <CreditCard className="w-4 h-4 text-white" />
-                      <span className="font-bold text-white font-display">Active Cards</span>
-                    </div>
-                    <span className="text-[11px] text-[#A1A1AA] font-mono">BAC Credomatic GT</span>
-                  </div>
-
-                  <div className="relative bac-card-gradient border border-[#242424] rounded-2xl p-5 shadow-2xl text-white group overflow-hidden">
-                    <div className="absolute top-0 right-0 w-32 h-1 bg-gradient-to-l from-[#E31837] via-[#E31837] to-transparent" />
-
-                    {/* Encabezado BAC */}
-                    <div className="flex items-center justify-between mb-6">
-                      <div className="flex items-center gap-2">
-                        <div className="w-5 h-5 rounded bg-[#E31837] flex items-center justify-center font-bold text-[10px] text-white tracking-tighter">
-                          BAC
-                        </div>
-                        <span className="text-xs font-bold tracking-wider text-white">
-                          Credomatic
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-2 text-neutral-400">
-                        <Wifi className="w-4 h-4 rotate-90 text-neutral-400" />
-                        <span className="text-[10px] uppercase font-mono tracking-widest text-[#A1A1AA]">
-                          Business
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Chip & Saldo Disponible en Vivo */}
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="w-9 h-7 rounded-md bg-gradient-to-br from-amber-200 via-amber-400 to-amber-600 p-0.5 shadow-sm border border-amber-300/40 flex items-center justify-center">
-                        <div className="w-full h-full border border-amber-700/30 rounded-xs flex flex-col justify-between p-0.5">
-                          <div className="border-b border-amber-700/30 h-1" />
-                          <div className="border-b border-amber-700/30 h-1" />
-                        </div>
-                      </div>
-
-                      <div className="text-right">
-                        <span className="text-[9px] uppercase tracking-wider text-[#A1A1AA] block">
-                          Saldo Disponible
-                        </span>
-                        <span className="text-xl font-bold font-numeric text-white tracking-tight">
-                          {formatGTQ(bacBalance)}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Número de Tarjeta */}
-                    <div className="flex items-center justify-between mt-2 mb-4">
-                      <div className="font-mono text-sm tracking-widest text-neutral-200">
-                        {showCardNumber ? '4519 • 8920 • 3412 • 4519' : '•••• •••• •••• 4519'}
-                      </div>
-                      <button
-                        onClick={() => setShowCardNumber(!showCardNumber)}
-                        className="p-1 text-[#A1A1AA] hover:text-white transition-colors"
-                      >
-                        {showCardNumber ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                      </button>
-                    </div>
-
-                    {/* Titular */}
-                    <div className="flex items-end justify-between pt-2 border-t border-white/10 text-xs">
-                      <div>
-                        <span className="text-[9px] uppercase tracking-wider text-[#A1A1AA] block">Titular</span>
-                        <span className="font-mono font-bold tracking-wide text-white uppercase text-[11px]">
-                          JULIO LEMUS
-                        </span>
-                      </div>
-
-                      <div className="text-right flex items-center gap-3">
-                        <div>
-                          <span className="text-[9px] uppercase tracking-wider text-[#A1A1AA] block">Expira</span>
-                          <span className="font-mono text-neutral-300 text-[11px]">12/28</span>
-                        </div>
-                        <div className="italic font-black text-sm tracking-tighter text-white">
-                          VISA
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-[#242424] text-[11px]">
-                    <button
-                      onClick={() => setModalTxOpen(true)}
-                      className="py-1.5 px-2 rounded-lg bg-white text-black font-bold text-center hover:bg-[#E4E4E7] transition-colors"
-                    >
-                      + Registrar Movimiento
-                    </button>
-                    <button
-                      onClick={() => handleExportExcel()}
-                      className="py-1.5 px-2 rounded-lg bg-[#050505] hover:bg-[#141414] text-white text-center border border-[#242424] transition-colors"
-                    >
-                      Descargar Excel
-                    </button>
+                  <div className="pt-4 mt-4 border-t border-neutral-100 flex items-center justify-between text-[11px] text-neutral-400">
+                    <span>{monthGoals.filter(g => g.completed).length} de {monthGoals.length} completadas</span>
+                    <span className="font-semibold text-neutral-700">Meta: Q 5,000.00</span>
                   </div>
                 </div>
 
-                {/* ==================== CATEGORÍAS DE INGRESOS (DONUT CHART) ==================== */}
-                <div className="dashboard-card p-5">
-                  <div className="flex items-center justify-between mb-2">
-                    <div>
-                      <h3 className="text-xs font-bold text-white font-display">
-                        Categorías de Ingreso
-                      </h3>
-                      <p className="text-[11px] text-[#A1A1AA]">Distribución de facturación real</p>
-                    </div>
-                    <div className="text-[10px] font-mono text-white bg-[#1A1A1A] px-2 py-0.5 rounded border border-[#333333]">
-                      En Vivo
-                    </div>
-                  </div>
-
-                  <DonutCategories transactions={transactions} />
-                </div>
-
-                {/* ==================== PRÓXIMAS CITAS RÁPIDAS (Widget de Calendario) ==================== */}
-                <div className="dashboard-card p-5 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-xs font-bold text-white font-display flex items-center gap-1.5">
-                      <CalendarIcon className="w-3.5 h-3.5 text-white" />
-                      <span>Agenda & Citas Próximas</span>
+                {/* TASK IN PROCESS (STICKY NOTES ESTILO IMAGE 1 - Right 8 cols) */}
+                <div className="lg:col-span-8 space-y-3">
+                  <div className="flex items-center justify-between px-1">
+                    <h3 className="text-sm font-bold text-neutral-900 font-display">
+                      Task In process (2)
                     </h3>
                     <button
-                      onClick={() => setActiveTab('calendario')}
-                      className="text-[11px] text-white hover:underline font-mono"
+                      onClick={() => setActiveTab('proyectos')}
+                      className="text-xs font-semibold text-neutral-500 hover:text-black transition"
                     >
-                      Ver agenda ({calendarEvents.length})
+                      Open archive &gt;
                     </button>
                   </div>
 
-                  {calendarEvents.length === 0 ? (
-                    <p className="text-xs text-[#71717A] py-2 text-center">No hay citas agendadas.</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {calendarEvents.slice(0, 3).map((ev) => (
-                        <div key={ev.id} className="bg-[#050505] p-2.5 rounded-xl border border-[#242424] text-xs flex items-center justify-between">
-                          <div className="min-w-0">
-                            <span className="font-bold text-white block truncate">{ev.titulo}</span>
-                            <span className="text-[10px] text-[#A1A1AA] font-mono flex items-center gap-1 mt-0.5">
-                              <Clock className="w-3 h-3" />
-                              {formatDate(ev.fecha)} • {ev.hora_inicio}
-                            </span>
-                          </div>
-                          {ev.enlace && (
-                            <a
-                              href={ev.enlace}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="p-1 rounded bg-[#1A1A1A] text-white hover:bg-white hover:text-black transition-colors"
-                              title="Abrir enlace"
-                            >
-                              <Video className="w-3.5 h-3.5" />
-                            </a>
-                          )}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    {/* Nota 1: Anticipo Santander */}
+                    <div className="idraft-card-note p-5 flex flex-col justify-between min-h-[145px] relative">
+                      <div className="flex items-center justify-between text-neutral-500">
+                        <div className="w-7 h-7 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-800">
+                          <Gift className="w-3.5 h-3.5" />
                         </div>
-                      ))}
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                          +Q 900.00
+                        </span>
+                      </div>
+                      <div className="my-2">
+                        <span className="text-xs font-bold text-neutral-900 block leading-tight">
+                          Anticipo página web 50%
+                        </span>
+                        <span className="text-[10px] text-neutral-400 block mt-0.5">
+                          Inmobiliaria Santander
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-[10px] text-neutral-400">
+                        <span>28 Oct 2026</span>
+                        <div className="w-6 h-6 rounded-lg bg-black text-white flex items-center justify-center shadow-sm">
+                          <Bell className="w-3 h-3" />
+                        </div>
+                      </div>
                     </div>
-                  )}
+
+                    {/* Nota 2: Pago Micrófono */}
+                    <div className="idraft-card-note p-5 flex flex-col justify-between min-h-[145px] relative">
+                      <div className="flex items-center justify-between text-neutral-500">
+                        <div className="w-7 h-7 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-800">
+                          <Volume2 className="w-3.5 h-3.5" />
+                        </div>
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-700">
+                          -Q 490.00
+                        </span>
+                      </div>
+                      <div className="my-2">
+                        <span className="text-xs font-bold text-neutral-900 block leading-tight">
+                          Pago de micrófono
+                        </span>
+                        <span className="text-[10px] text-neutral-400 block mt-0.5">
+                          Setup oficina / mi apa
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-[10px] text-neutral-400">
+                        <span>01 Nov 2026</span>
+                        <div className="w-6 h-6 rounded-lg bg-neutral-200 text-neutral-600 flex items-center justify-center">
+                          <Bell className="w-3 h-3" />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Nota 3: + Add task (Dashed Card) */}
+                    <div
+                      onClick={() => setModalTxOpen(true)}
+                      className="border-2 border-dashed border-neutral-300 hover:border-black rounded-[24px] p-5 flex flex-col items-center justify-center min-h-[145px] cursor-pointer group hover:bg-white/60 transition-all text-center"
+                    >
+                      <div className="w-8 h-8 rounded-full bg-neutral-100 group-hover:bg-black group-hover:text-white flex items-center justify-center text-neutral-600 transition mb-2">
+                        <Plus className="w-4 h-4" />
+                      </div>
+                      <span className="text-xs font-bold text-neutral-700 group-hover:text-black">
+                        + Registrar Movimiento
+                      </span>
+                      <span className="text-[10px] text-neutral-400">
+                        Ingreso o Gasto
+                      </span>
+                    </div>
+                  </div>
                 </div>
 
               </div>
 
-            </div>
-          )}
+              {/* FILA INFERIOR: LAST PROJECTS (HORIZONTALES OSCUROS ESTILO IMAGE 1) */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between px-1">
+                  <h3 className="text-sm font-bold text-neutral-900 font-display">
+                    Last Projects & Portafolio
+                  </h3>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-neutral-400">Sort by</span>
+                    <button className="flex items-center gap-1 text-xs font-semibold text-neutral-700 bg-white px-2.5 py-1 rounded-xl border border-neutral-200">
+                      <span>Recientes</span>
+                      <ChevronDown className="w-3 h-3" />
+                    </button>
+                  </div>
+                </div>
 
-          {/* TAB 2: PÁGINAS WEB (CATÁLOGO & RECICLAJE) */}
-          {activeTab === 'websites' && (
-            <WebsitesView
-              onOpenNewWebsite={() => handleOpenWebsiteModal()}
-              onEditWebsite={(web) => handleOpenWebsiteModal(web)}
-            />
-          )}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {/* Proyecto 1: Inmobiliaria Santander */}
+                  <div className="bg-[#141414] text-white p-5 rounded-[24px] flex flex-col justify-between shadow-md hover:shadow-xl transition">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-white">Inmobiliaria Santander</span>
+                      <span className="w-6 h-6 rounded-full bg-neutral-800 text-neutral-300 flex items-center justify-center text-[10px] font-bold">
+                        50%
+                      </span>
+                    </div>
+                    <div className="my-3">
+                      <div className="flex items-center gap-1.5 text-[11px] text-emerald-400 mb-1">
+                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                        <span>En progreso</span>
+                      </div>
+                      <p className="text-[11px] text-neutral-400 leading-snug line-clamp-2">
+                        Página Web Corporativa • Anticipo Q900 cobrado exitosamente.
+                      </p>
+                    </div>
+                    <div className="w-full bg-neutral-800 h-1.5 rounded-full overflow-hidden">
+                      <div className="bg-white h-full rounded-full w-1/2" />
+                    </div>
+                  </div>
 
-          {/* TAB 3: CALENDARIO & CITAS */}
-          {activeTab === 'calendario' && (
-            <CalendarView
-              onOpenNewEvent={(date) => handleOpenCalendarModal(date)}
-              onEditEvent={(evt) => handleOpenCalendarModal(evt)}
-            />
-          )}
+                  {/* Proyecto 2: Portal Inmobiliario Santander (Web Creada) */}
+                  <div className="bg-[#141414] text-white p-5 rounded-[24px] flex flex-col justify-between shadow-md hover:shadow-xl transition">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-white">Portal Santander Inmuebles</span>
+                      <span className="w-6 h-6 rounded-full bg-neutral-800 text-neutral-300 flex items-center justify-center text-[10px] font-bold">
+                        1/1
+                      </span>
+                    </div>
+                    <div className="my-3">
+                      <div className="flex items-center gap-1.5 text-[11px] text-neutral-300 mb-1">
+                        <span className="w-2 h-2 rounded-full bg-white" />
+                        <span>Web Reciclable</span>
+                      </div>
+                      <p className="text-[11px] text-neutral-400 leading-snug line-clamp-2">
+                        Buscador con filtros y mapa interactivo listo para reutilizar.
+                      </p>
+                    </div>
+                    <div className="flex items-center justify-between text-[10px] text-neutral-400 pt-1 border-t border-neutral-800">
+                      <span>Categoría: Inmobiliaria</span>
+                      <a
+                        href="https://santander-inmuebles.gt"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-white hover:underline flex items-center gap-1"
+                      >
+                        <span>Visitar</span>
+                        <ExternalLink className="w-2.5 h-2.5" />
+                      </a>
+                    </div>
+                  </div>
 
-          {/* TAB 4: PROYECTOS */}
-          {activeTab === 'proyectos' && (
-            <ProjectsView
-              onOpenNewProject={() => setModalProjOpen(true)}
-              onEditProgress={handleOpenEditProgress}
-            />
-          )}
+                  {/* Proyecto 3: Tarjeta BAC Credomatic Card */}
+                  <div className="bg-gradient-to-br from-[#1C1C1E] to-[#0A0A0A] text-white p-5 rounded-[24px] flex flex-col justify-between shadow-md border border-neutral-800 hover:border-neutral-700 transition">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-neutral-300 flex items-center gap-1.5">
+                        <CreditCard className="w-3.5 h-3.5" />
+                        BAC Credomatic
+                      </span>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-red-600/20 text-red-400 border border-red-500/30">
+                        Business
+                      </span>
+                    </div>
+                    <div className="my-2">
+                      <span className="text-[10px] text-neutral-400 block">Saldo Disponible</span>
+                      <span className="text-2xl font-extrabold text-white font-numeric tracking-tight">
+                        {formatGTQ(bacBalance)}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-[10px] text-neutral-400 pt-1">
+                      <span>•••• •••• •••• 4519</span>
+                      <span className="font-bold text-white">JULIO LEMUS</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
 
-          {/* TAB 5: CLIENTES CRM */}
-          {activeTab === 'clientes' && (
-            <ClientsView onOpenNewClient={() => setModalClientOpen(true)} />
-          )}
-
-          {/* TAB 6: COTIZACIONES */}
-          {activeTab === 'cotizaciones' && (
-            <div className="space-y-6 animate-in fade-in duration-200">
-              <div className="dashboard-card p-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+              {/* FILA 4: LISTA COMPLETA DE TRANSACCIONES REALES (IMAGEN 2) */}
+              <div className="idraft-card-white p-6 space-y-4">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                   <div>
-                    <h2 className="text-lg font-bold text-white font-display">
-                      Control de Cotizaciones
-                    </h2>
-                    <p className="text-xs text-[#A1A1AA]">
-                      Presupuestos emitidos para clientes y prospectos de Lemus Studio
+                    <h3 className="text-base font-bold text-neutral-900 font-display">
+                      Transacciones Recientes
+                    </h3>
+                    <p className="text-xs text-neutral-500">
+                      Mostrando movimientos reales registrados en tu libro
                     </p>
                   </div>
-                  <button
-                    onClick={() => setModalTxOpen(true)}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white text-black font-bold text-xs hover:bg-[#E4E4E7] transition-all"
-                  >
-                    <Plus className="w-4 h-4" />
-                    <span>Registrar Anticipo</span>
-                  </button>
+
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center bg-neutral-100 rounded-full p-1 text-xs">
+                      {['Todos', 'ingreso', 'gasto'].map((tipo) => (
+                        <button
+                          key={tipo}
+                          onClick={() => setTxFilterType(tipo)}
+                          className={`px-3 py-1 rounded-full text-xs font-semibold capitalize transition ${
+                            txFilterType === tipo
+                              ? 'bg-black text-white shadow-sm'
+                              : 'text-neutral-500 hover:text-black'
+                          }`}
+                        >
+                          {tipo === 'ingreso' ? 'Ingresos' : tipo === 'gasto' ? 'Gastos' : 'Todos'}
+                        </button>
+                      ))}
+                    </div>
+
+                    <button
+                      onClick={() => setModalTxOpen(true)}
+                      className="bg-black hover:bg-neutral-800 text-white rounded-full px-3.5 py-1.5 text-xs font-semibold flex items-center gap-1.5 shadow-sm transition active:scale-95"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>+ Movimiento</span>
+                    </button>
+                  </div>
                 </div>
 
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs">
-                    <thead>
-                      <tr className="border-b border-[#242424] text-[#71717A] uppercase tracking-wider text-[10px]">
-                        <th className="pb-3 font-semibold font-mono">Folio</th>
-                        <th className="pb-3 font-semibold">Cliente</th>
-                        <th className="pb-3 font-semibold">Servicio Cotizado</th>
-                        <th className="pb-3 font-semibold">Monto Estimado</th>
-                        <th className="pb-3 font-semibold">Estado</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-[#1F1F1F]">
-                      {[
-                        { id: 'COT-2026-031', client: 'Hospital Los Arcos', service: 'Portal de Citas y Rediseño Web', amount: 16500.00, status: 'En Negociación' },
-                        { id: 'COT-2026-030', client: 'Grupo Constructor Bolívar', service: 'Landing Page & Branding Digital', amount: 6200.00, status: 'Aprobada' },
-                        { id: 'COT-2026-029', client: 'Restaurante K’ulub', service: 'Menú Digital Interactivo & Delivery', amount: 4800.00, status: 'Pendiente Firma' },
-                      ].map((q) => (
-                        <tr key={q.id} className="hover:bg-[#141414]">
-                          <td className="py-4 font-mono font-medium text-white">{q.id}</td>
-                          <td className="py-4 font-bold text-white">{q.client}</td>
-                          <td className="py-4 text-[#A1A1AA]">{q.service}</td>
-                          <td className="py-4 font-numeric font-bold text-white">{formatGTQ(q.amount)}</td>
-                          <td className="py-4">
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-[#1C1C1C] text-[#E4E4E7] border border-[#2A2A2A]">
-                              {q.status}
+                {/* Lista de transacciones exactas de Image 2 */}
+                <div className="divide-y divide-neutral-100">
+                  {filteredTransactions.map((tx) => {
+                    const isIncome = tx.tipo === 'ingreso';
+                    return (
+                      <div
+                        key={tx.id}
+                        className="py-3.5 flex items-center justify-between gap-4 hover:bg-neutral-50/80 px-2 rounded-2xl transition group"
+                      >
+                        <div className="flex items-center gap-3.5">
+                          <div
+                            className={`w-9 h-9 rounded-2xl flex items-center justify-center font-bold text-xs shrink-0 ${
+                              isIncome
+                                ? 'bg-emerald-100 text-emerald-800'
+                                : 'bg-neutral-100 text-neutral-800'
+                            }`}
+                          >
+                            {isIncome ? (
+                              <ArrowUpRight className="w-4 h-4 text-emerald-600" />
+                            ) : (
+                              <ArrowDownRight className="w-4 h-4 text-rose-500" />
+                            )}
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs sm:text-sm font-bold text-neutral-900 capitalize">
+                                {tx.motivo}
+                              </span>
+                              {tx.categoria && (
+                                <span
+                                  className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                                    tx.categoria === 'Webs completas'
+                                      ? 'bg-emerald-100 text-emerald-800'
+                                      : 'bg-neutral-200 text-neutral-700'
+                                  }`}
+                                >
+                                  {tx.categoria}
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-[11px] text-neutral-400 block mt-0.5">
+                              {tx.subinfo ? `${tx.subinfo} • ` : ''}
+                              {formatDate(tx.fecha)}
                             </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                          <span
+                            className={`text-xs sm:text-sm font-bold font-numeric ${
+                              isIncome ? 'text-emerald-700' : 'text-neutral-900'
+                            }`}
+                          >
+                            {isIncome ? `+ ${formatGTQ(tx.monto)}` : `- ${formatGTQ(tx.monto)}`}
+                          </span>
+
+                          <button
+                            onClick={() => {
+                              if (confirm(`¿Eliminar "${tx.motivo}"?`)) {
+                                deleteTransaction(tx.id);
+                              }
+                            }}
+                            className="p-1.5 rounded-lg text-neutral-400 hover:text-rose-600 hover:bg-rose-50 transition"
+                            title="Eliminar movimiento"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>
           )}
 
-          {/* TAB 7: CONFIGURACIÓN & EXCEL */}
-          {activeTab === 'configuracion' && <SettingsView />}
+          {/* OTRAS PESTAÑAS (Calendario, Proyectos, Clientes, Websites, Settings) */}
+          {activeTab === 'calendario' && (
+            <div className="idraft-card-white p-6 animate-fadeIn">
+              <CalendarView
+                onOpenAddModal={(date) => {
+                  setCalendarDefaultDate(date);
+                  setSelectedEventToEdit(null);
+                  setModalCalOpen(true);
+                }}
+                onOpenEditModal={(evt) => {
+                  setSelectedEventToEdit(evt);
+                  setCalendarDefaultDate(null);
+                  setModalCalOpen(true);
+                }}
+              />
+            </div>
+          )}
+
+          {activeTab === 'proyectos' && (
+            <div className="idraft-card-white p-6 animate-fadeIn">
+              <ProjectsView
+                onOpenNewProject={() => setModalProjOpen(true)}
+                onOpenEditProgress={(proj) => {
+                  setSelectedProject(proj);
+                  setModalEditProgOpen(true);
+                }}
+              />
+            </div>
+          )}
+
+          {activeTab === 'clientes' && (
+            <div className="idraft-card-white p-6 animate-fadeIn">
+              <ClientsView onOpenNewClient={() => setModalClientOpen(true)} />
+            </div>
+          )}
+
+          {activeTab === 'websites' && (
+            <div className="idraft-card-white p-6 animate-fadeIn">
+              <WebsitesView
+                onOpenNewWebsite={() => {
+                  setSelectedWebsiteToEdit(null);
+                  setModalWebOpen(true);
+                }}
+                onOpenEditWebsite={(web) => {
+                  setSelectedWebsiteToEdit(web);
+                  setModalWebOpen(true);
+                }}
+              />
+            </div>
+          )}
+
+          {activeTab === 'configuracion' && (
+            <div className="idraft-card-white p-6 animate-fadeIn">
+              <SettingsView />
+            </div>
+          )}
         </main>
+
       </div>
     </div>
   );

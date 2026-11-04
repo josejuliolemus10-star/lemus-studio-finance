@@ -4,11 +4,82 @@ import { persist } from 'zustand/middleware';
 export const useFinancialStore = create(
   persist(
     (set, get) => ({
-      // --- ENTIDADES PRINCIPALES (Base de Datos Local) ---
-      // Movimientos de flujo de caja (Inicia en 0)
-      transactions: [],
+      // --- ENTIDADES PRINCIPALES (Base de Datos Local con datos exactos de Lemus Studio) ---
+      // Movimientos de flujo de caja reales (Image 2)
+      transactions: [
+        {
+          id: 'tx-1',
+          tipo: 'gasto',
+          monto: 15.00,
+          motivo: 'gasolina',
+          categoria: 'Webs completas',
+          subinfo: 'moto',
+          fecha: '2026-11-01',
+          id_cliente: 'cli-1'
+        },
+        {
+          id: 'tx-2',
+          tipo: 'gasto',
+          monto: 490.00,
+          motivo: 'pago de microfono',
+          categoria: 'Otros',
+          subinfo: 'mi apa',
+          fecha: '2026-11-01',
+          id_cliente: ''
+        },
+        {
+          id: 'tx-3',
+          tipo: 'gasto',
+          monto: 10.00,
+          motivo: 'mi apa',
+          categoria: 'Otros',
+          subinfo: 'mi apa',
+          fecha: '2026-11-01',
+          id_cliente: ''
+        },
+        {
+          id: 'tx-4',
+          tipo: 'gasto',
+          monto: 62.00,
+          motivo: 'Pizza',
+          categoria: 'Otros',
+          subinfo: 'Con mi peloncita',
+          fecha: '2026-11-01',
+          id_cliente: ''
+        },
+        {
+          id: 'tx-5',
+          tipo: 'gasto',
+          monto: 40.00,
+          motivo: 'Taco Bell',
+          categoria: 'Otros',
+          subinfo: 'Mi peloncita',
+          fecha: '2026-10-28',
+          id_cliente: ''
+        },
+        {
+          id: 'tx-6',
+          tipo: 'ingreso',
+          monto: 5.00,
+          motivo: 'REGALO',
+          categoria: 'Webs completas',
+          subinfo: 'MI APA',
+          fecha: '2026-10-28',
+          id_cliente: ''
+        },
+        {
+          id: 'tx-7',
+          tipo: 'ingreso',
+          monto: 900.00,
+          motivo: 'Anticipo de pagina web 50%',
+          categoria: 'Webs completas',
+          subinfo: 'INMOBILIARIA SANTANDER',
+          fecha: '2026-10-28',
+          id_cliente: 'cli-1'
+        }
+      ],
 
-      // Clientes con Pipeline CRM: 'Contactado', 'En proceso', 'Cerrado'
+      // Clientes con Pipeline CRM
       clients: [
         {
           id: 'cli-1',
@@ -22,21 +93,31 @@ export const useFinancialStore = create(
           nombre: 'Ana Lucía Morales',
           empresa: 'Café Despierto Guatemala',
           contacto: '+502 5543-9821',
-          estado: 'En proceso', // En negociación
+          estado: 'En proceso',
         },
         {
           id: 'cli-3',
           nombre: 'Dr. Alejandro Méndez',
           empresa: 'Hospital Los Arcos',
           contacto: 'amendez@losarcos.gt',
-          estado: 'Contactado', // Primer contacto
+          estado: 'Contactado',
         }
       ],
 
       // Proyectos de la agencia
-      projects: [],
+      projects: [
+        {
+          id: 'proj-1',
+          nombre: 'Página Web Corporativa',
+          cliente: 'Inmobiliaria Santander',
+          id_cliente: 'cli-1',
+          estado: 'En progreso',
+          progreso: 50,
+          fecha_entrega: '2026-11-15'
+        }
+      ],
 
-      // Saldo base de la tarjeta BAC Credomatic (Inicia estrictamente en 0.00)
+      // Saldo base de la tarjeta BAC Credomatic (Saldo exacto: Q 0.00 inicial + 288.00 neto = Q 288.00)
       baseBacBalance: 0.00,
 
       // --- CATÁLOGO DE PÁGINAS WEB CREADAS (Para reciclaje de código y componentes) ---
@@ -370,8 +451,8 @@ export const useFinancialStore = create(
       }
     }),
     {
-      name: 'lemus_studio_finance_v4', // Versión 4 con Páginas Web y Calendario
-      version: 4,
+      name: 'lemus_studio_finance_v5', // Versión 5 con datos reales de Image 2 y estilo Bento iDraft
+      version: 5,
     }
   )
 );
