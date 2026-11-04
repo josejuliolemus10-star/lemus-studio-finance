@@ -127,3 +127,17 @@
   animation: deleteItemAnim 0.32s cubic-bezier(0.2, 0, 0, 1) forwards !important;
   pointer-events: none;
 }
+
+/* Animación de barra de tiempo de notificación */
+@keyframes toastProgressAnim {
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
+  }
+}
+
+.toast-progress-bar {
+  animation: toastProgressAnim 4.5s linear forwards;
+}

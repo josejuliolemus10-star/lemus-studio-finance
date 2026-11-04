@@ -100,6 +100,7 @@ export default function App() {
 
   // Modal para escribir apuntes del mes
   const [modalNotesOpen, setModalNotesOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
 
   // Estado para eliminar transacciones con confirmación y animación
   const [txToDelete, setTxToDelete] = useState(null);
@@ -379,14 +380,168 @@ export default function App() {
                 <Download className="w-4 h-4" />
               </button>
 
-              <button
-                onClick={() => setActiveTab('calendario')}
-                className="bg-white hover:bg-neutral-50 text-neutral-700 p-2.5 rounded-full border border-neutral-200/80 shadow-sm transition relative"
-                title="Ver Agenda"
-              >
-                <Bell className="w-4 h-4" />
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-amber-500" />
-              </button>
+              {/* Centro de Notificaciones Bento */}
+              <div className="relative">
+                <button
+                  onClick={() => setNotificationsOpen(!notificationsOpen)}
+                  className="bg-white hover:bg-neutral-50 text-neutral-700 p-2.5 rounded-full border border-neutral-200/80 shadow-sm transition relative active:scale-95"
+                  title="Centro de Notificaciones"
+                >
+                  <Bell className="w-4 h-4" />
+                  <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-black ring-2 ring-white animate-pulse" />
+                </button>
+
+                {/* Popover desplegable estilo Bento */}
+                {notificationsOpen && (
+                  <>
+                    <div 
+                      className="fixed inset-0 z-40" 
+                      onClick={() => setNotificationsOpen(false)} 
+                    />
+                    <div className="absolute right-0 top-12 z-50 w-80 sm:w-96 bg-white/95 backdrop-blur-2xl border border-neutral-200/90 rounded-[26px] shadow-[0_25px_60px_-15px_rgba(0,0,0,0.25)] p-5 text-neutral-900 animate-in fade-in zoom-in-95 duration-150">
+                      {/* Cabecera */}
+                      <div className="flex items-center justify-between pb-3 border-b border-neutral-100">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-xl bg-black text-white flex items-center justify-center font-bold text-xs shadow-sm">
+                            <Bell className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <h3 className="text-sm font-bold text-neutral-900 leading-tight">Centro de Notificaciones</h3>
+                            <p className="text-[11px] text-neutral-400">Lemus Studio • Suite privada</p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => setNotificationsOpen(false)}
+                          className="p-1 text-neutral-400 hover:text-black hover:bg-neutral-100 rounded-lg transition"
+                          title="Cerrar"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+
+                      {/* Lista de Notificaciones y Alertas del Sistema */}
+                      <div className="mt-3.5 space-y-2.5 max-h-[380px] overflow-y-auto pr-1">
+                        {/* 1. Alerta de Cita más próxima */}
+                        {upcomingEvents.length > 0 && (
+                          <div
+                            onClick={() => {
+                              setActiveTab('calendario');
+                              setNotificationsOpen(false);
+                            }}
+                            className="p-3 rounded-2xl bg-neutral-50 hover:bg-neutral-100 border border-neutral-200/60 transition cursor-pointer group"
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 font-mono">
+                                📅 Próxima Cita
+                              </span>
+                              <span className="text-[10px] bg-black text-white px-2 py-0.5 rounded-full font-semibold">
+                                {upcomingEvents[0].fecha}
+                              </span>
+                            </div>
+                            <h4 className="text-xs font-bold text-neutral-900 mt-1 group-hover:text-neutral-700">
+                              {upcomingEvents[0].titulo}
+                            </h4>
+                            <p className="text-[11px] text-neutral-500 mt-0.5 flex items-center gap-1.5">
+                              <span>⏰ {upcomingEvents[0].hora_inicio} - {upcomingEvents[0].hora_fin}</span>
+                              {upcomingEvents[0].cliente && <span>• {upcomingEvents[0].cliente}</span>}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* 2. Saldo BAC y Finanzas */}
+                        <div
+                          onClick={() => {
+                            setActiveTab('dashboard');
+                            setNotificationsOpen(false);
+                          }}
+                          className="p-3 rounded-2xl bg-neutral-50 hover:bg-neutral-100 border border-neutral-200/60 transition cursor-pointer group"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 font-mono">
+                              💳 Estado Financiero
+                            </span>
+                            <span className="text-[10px] text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full font-bold">
+                              Al día
+                            </span>
+                          </div>
+                          <h4 className="text-xs font-bold text-neutral-900 mt-1">
+                            Saldo Disponible: {formatGTQ(bacBalance)}
+                          </h4>
+                          <p className="text-[11px] text-neutral-500 mt-0.5">
+                            Cuenta BAC Credomatic con {transactions.length} movimientos registrados.
+                          </p>
+                        </div>
+
+                        {/* 3. Avance de Proyectos */}
+                        {projects.length > 0 && (
+                          <div
+                            onClick={() => {
+                              setActiveTab('proyectos');
+                              setNotificationsOpen(false);
+                            }}
+                            className="p-3 rounded-2xl bg-neutral-50 hover:bg-neutral-100 border border-neutral-200/60 transition cursor-pointer group"
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 font-mono">
+                                🚀 Proyecto Activo
+                              </span>
+                              <span className="text-[10px] bg-neutral-900 text-white px-2 py-0.5 rounded-full font-bold font-numeric">
+                                {projects[0].progreso}%
+                              </span>
+                            </div>
+                            <h4 className="text-xs font-bold text-neutral-900 mt-1">
+                              {projects[0].nombre}
+                            </h4>
+                            <p className="text-[11px] text-neutral-500 mt-0.5">
+                              {projects[0].cliente || 'Inmobiliaria Santander'} • Entrega: {projects[0].fecha_entrega || '15 Nov'}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* 4. Sincronización y Excel */}
+                        <div
+                          onClick={() => {
+                            handleExportExcel();
+                            setNotificationsOpen(false);
+                          }}
+                          className="p-3 rounded-2xl bg-neutral-50 hover:bg-neutral-100 border border-neutral-200/60 transition cursor-pointer group"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 font-mono">
+                              📗 Respaldo Master
+                            </span>
+                            <span className="text-[10px] text-neutral-600 bg-white border border-neutral-200 px-2 py-0.5 rounded-full font-semibold">
+                              ExcelJS
+                            </span>
+                          </div>
+                          <h4 className="text-xs font-bold text-neutral-900 mt-1">
+                            Sincronización para Google Sheets / Excel
+                          </h4>
+                          <p className="text-[11px] text-neutral-500 mt-0.5">
+                            Haz clic para descargar el libro con tablas corporativas.
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Pie con enlace rápido */}
+                      <div className="pt-3 mt-3 border-t border-neutral-100 flex items-center justify-between">
+                        <span className="text-[11px] text-neutral-400">
+                          {toasts.length > 0 ? `${toasts.length} avisos recientes` : 'Sistema en línea'}
+                        </span>
+                        <button
+                          onClick={() => {
+                            setActiveTab('calendario');
+                            setNotificationsOpen(false);
+                          }}
+                          className="text-xs font-bold text-neutral-900 hover:underline"
+                        >
+                          Abrir Calendario →
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
 
               <div className="w-10 h-10 rounded-full bg-black text-white flex items-center justify-center font-bold text-xs shadow-sm border border-neutral-200">
                 JL
