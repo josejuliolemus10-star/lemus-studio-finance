@@ -1,20 +1,34 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useFinancialStore } from '../store/useFinancialStore';
-import { X, Globe, User, Tag, Link2, Sparkles, AlertCircle, Calendar } from 'lucide-react';
+import { X, Globe, User, Tag, Link2, Sparkles, AlertCircle, Calendar, Trash2 } from 'lucide-react';
 import { getTodayString } from '../utils/formatters';
 
 export const ModalWebsite = ({ isOpen, onClose, websiteToEdit = null }) => {
   const addWebsite = useFinancialStore((state) => state.addWebsite);
   const updateWebsite = useFinancialStore((state) => state.updateWebsite);
+  const deleteWebsite = useFinancialStore((state) => state.deleteWebsite);
   const clients = useFinancialStore((state) => state.clients);
 
-  const [titulo, setTitulo] = useState(websiteToEdit?.titulo || '');
-  const [cliente, setCliente] = useState(websiteToEdit?.cliente || '');
-  const [url, setUrl] = useState(websiteToEdit?.url || '');
-  const [categoria, setCategoria] = useState(websiteToEdit?.categoria || 'Landing Page');
-  const [descripcion, setDescripcion] = useState(websiteToEdit?.descripcion || '');
-  const [fecha, setFecha] = useState(websiteToEdit?.fecha || getTodayString());
+  const [titulo, setTitulo] = useState('');
+  const [cliente, setCliente] = useState('');
+  const [url, setUrl] = useState('');
+  const [categoria, setCategoria] = useState('Landing Page');
+  const [descripcion, setDescripcion] = useState('');
+  const [fecha, setFecha] = useState(getTodayString());
   const [error, setError] = useState('');
+
+  // Sincronizar inmediatamente los campos cada vez que el modal se abre o cambia el sitio a editar
+  useEffect(() => {
+    if (isOpen) {
+      setTitulo(websiteToEdit?.titulo || '');
+      setCliente(websiteToEdit?.cliente || '');
+      setUrl(websiteToEdit?.url || '');
+      setCategoria(websiteToEdit?.categoria || 'Landing Page');
+      setDescripcion(websiteToEdit?.descripcion || '');
+      setFecha(websiteToEdit?.fecha || getTodayString());
+      setError('');
+    }
+  }, [isOpen, websiteToEdit]);
 
   if (!isOpen) return null;
 
@@ -37,20 +51,20 @@ export const ModalWebsite = ({ isOpen, onClose, websiteToEdit = null }) => {
 
     if (websiteToEdit) {
       updateWebsite(websiteToEdit.id, {
-        titulo,
-        cliente: cliente || 'Proyecto Propio',
+        titulo: titulo.trim(),
+        cliente: cliente.trim() || 'Proyecto Propio',
         url: finalUrl,
         categoria,
-        descripcion,
+        descripcion: descripcion.trim(),
         fecha,
       });
     } else {
       addWebsite({
-        titulo,
-        cliente: cliente || 'Proyecto Propio',
+        titulo: titulo.trim(),
+        cliente: cliente.trim() || 'Proyecto Propio',
         url: finalUrl,
         categoria,
-        descripcion,
+        descripcion: descripcion.trim(),
         fecha,
       });
     }
@@ -61,6 +75,13 @@ export const ModalWebsite = ({ isOpen, onClose, websiteToEdit = null }) => {
     setDescripcion('');
     setError('');
     onClose();
+  };
+
+  const handleDelete = () => {
+    if (websiteToEdit) {
+      deleteWebsite(websiteToEdit.id);
+      onClose();
+    }
   };
 
   const categories = [
@@ -208,20 +229,33 @@ export const ModalWebsite = ({ isOpen, onClose, websiteToEdit = null }) => {
           </div>
 
           {/* Botones */}
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#242424]">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 rounded-xl text-[#A1A1AA] hover:text-white transition-colors text-xs font-medium"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              className="px-5 py-2.5 rounded-xl bg-white text-black font-bold text-xs hover:bg-[#E4E4E7] transition-all shadow-[0_0_20px_rgba(255,255,255,0.2)]"
-            >
-              {websiteToEdit ? 'Guardar Cambios' : 'Agregar al Catálogo'}
-            </button>
+          <div className="flex items-center justify-between gap-3 pt-4 border-t border-[#242424]">
+            {websiteToEdit ? (
+              <button
+                type="button"
+                onClick={handleDelete}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-rose-400 hover:text-rose-300 hover:bg-rose-950/40 border border-rose-900/40 text-xs font-medium transition"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Eliminar Sitio</span>
+              </button>
+            ) : <div />}
+
+            <div className="flex items-center gap-2.5">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 rounded-xl text-[#A1A1AA] hover:text-white transition-colors text-xs font-medium"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                className="px-5 py-2.5 rounded-xl bg-white text-black font-bold text-xs hover:bg-[#E4E4E7] transition-all shadow-[0_0_20px_rgba(255,255,255,0.2)] active:scale-95"
+              >
+                {websiteToEdit ? 'Guardar Cambios' : 'Agregar al Catálogo'}
+              </button>
+            </div>
           </div>
         </form>
       </div>

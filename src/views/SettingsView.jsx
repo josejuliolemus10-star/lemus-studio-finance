@@ -134,7 +134,7 @@ export const SettingsView = () => {
 
           <div className="bg-[#050505] p-3 rounded-xl border border-[#242424]">
             <span className="text-[#A1A1AA] block mb-1">Persistencia:</span>
-            <span className="text-white font-mono">LocalStorage Activo (lemus_studio_finance_v4)</span>
+            <span className="text-white font-mono">LocalStorage Seguro (lemus_studio_finance_v6 + Espejo)</span>
           </div>
         </div>
       </div>

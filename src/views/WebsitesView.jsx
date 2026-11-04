@@ -4,7 +4,8 @@ import { Plus, Globe, ExternalLink, Copy, Check, Trash2, Edit3, Sparkles, Tag, U
 import { formatDate } from '../utils/formatters';
 import { ModalConfirmDelete } from '../components/ModalConfirmDelete';
 
-export const WebsitesView = ({ onOpenNewWebsite, onEditWebsite }) => {
+export const WebsitesView = ({ onOpenNewWebsite, onEditWebsite, onOpenEditWebsite }) => {
+  const handleEdit = onEditWebsite || onOpenEditWebsite;
   const websites = useFinancialStore((state) => state.websites);
   const deleteWebsite = useFinancialStore((state) => state.deleteWebsite);
   const addToast = useFinancialStore((state) => state.addToast);
@@ -218,9 +219,13 @@ export const WebsitesView = ({ onOpenNewWebsite, onEditWebsite }) => {
 
                   <div className="flex items-center gap-1.5">
                     <button
-                      onClick={() => onEditWebsite(web)}
+                      onClick={() => {
+                        if (typeof handleEdit === 'function') {
+                          handleEdit(web);
+                        }
+                      }}
                       title="Editar información"
-                      className="p-2 rounded-xl text-neutral-500 hover:text-black hover:bg-neutral-100 transition"
+                      className="p-2 rounded-xl text-neutral-500 hover:text-black hover:bg-neutral-100 transition active:scale-95"
                     >
                       <Edit3 className="w-4 h-4" />
                     </button>

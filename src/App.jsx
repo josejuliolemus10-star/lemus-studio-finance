@@ -1369,6 +1369,10 @@ export default function App() {
                   setSelectedWebsiteToEdit(null);
                   setModalWebOpen(true);
                 }}
+                onEditWebsite={(web) => {
+                  setSelectedWebsiteToEdit(web);
+                  setModalWebOpen(true);
+                }}
                 onOpenEditWebsite={(web) => {
                   setSelectedWebsiteToEdit(web);
                   setModalWebOpen(true);

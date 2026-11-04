@@ -1,5 +1,71 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
+
+// Gestor de almacenamiento con alta disponibilidad y tolerancia a fallos
+// Asegura que cualquier dato creado o modificado por el usuario se guarde y nunca se borre
+const safeStorage = {
+  getItem: (name) => {
+    if (typeof window === 'undefined') return null;
+    try {
+      // 1. Leer clave activa
+      const currentVal = window.localStorage.getItem(name);
+      if (currentVal) {
+        try {
+          const parsed = JSON.parse(currentVal);
+          if (parsed && parsed.state) {
+            return currentVal;
+          }
+        } catch (e) {}
+      }
+
+      // 2. Respaldo automático: si la clave activa aún no está poblada, recuperar de versiones anteriores
+      const fallbackKeys = [
+        'lemus_studio_finance_backup',
+        'lemus_studio_finance_v6',
+        'lemus_studio_finance_v5',
+        'lemus_studio_finance_v4',
+        'lemus_studio_finance_v3',
+        'lemus_studio_finance_v2',
+        'lemus_studio_finance'
+      ];
+      for (const fallbackKey of fallbackKeys) {
+        if (fallbackKey === name) continue;
+        const fallbackVal = window.localStorage.getItem(fallbackKey);
+        if (fallbackVal) {
+          try {
+            const parsedFallback = JSON.parse(fallbackVal);
+            if (parsedFallback && parsedFallback.state) {
+              console.log(`[Storage] Datos guardados del usuario preservados y restaurados desde ${fallbackKey}`);
+              return fallbackVal;
+            }
+          } catch (e) {}
+        }
+      }
+    } catch (err) {
+      console.warn('Error leyendo localStorage:', err);
+    }
+    return window.localStorage.getItem(name);
+  },
+
+  setItem: (name, value) => {
+    if (typeof window === 'undefined') return;
+    try {
+      window.localStorage.setItem(name, value);
+      // Redundancia doble: siempre guardar copia espejo de seguridad
+      window.localStorage.setItem('lemus_studio_finance_backup', value);
+      window.localStorage.setItem('lemus_studio_finance_v6', value);
+    } catch (err) {
+      console.warn('Error guardando en localStorage:', err);
+    }
+  },
+
+  removeItem: (name) => {
+    if (typeof window === 'undefined') return;
+    try {
+      window.localStorage.removeItem(name);
+    } catch (err) {}
+  }
+};
 
 export const useFinancialStore = create(
   persist(
@@ -131,6 +197,15 @@ export const useFinancialStore = create(
 
       // --- CATÁLOGO DE PÁGINAS WEB CREADAS (Para reciclaje de código y componentes) ---
       websites: [
+        {
+          id: 'web-user-bienes-raices',
+          titulo: 'Casas en venta Quetzaltenango',
+          cliente: 'Casas en venta Quetzaltenango Bienes Raíces',
+          url: 'https://josejuliolemus10-star.github.io/bienes-raices/',
+          categoria: 'Landing Page',
+          descripcion: 'Tambien tiene un CRM',
+          fecha: '2026-11-03',
+        },
         {
           id: 'web-1',
           titulo: 'Portal Inmobiliario Santander',
@@ -487,8 +562,9 @@ export const useFinancialStore = create(
       }
     }),
     {
-      name: 'lemus_studio_finance_v6', // Versión 6 con fechas de calendario sincronizadas a tiempo real
+      name: 'lemus_studio_finance_v6',
       version: 6,
+      storage: createJSONStorage(() => safeStorage),
     }
   )
 );
