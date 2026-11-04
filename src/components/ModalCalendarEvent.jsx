@@ -1,23 +1,38 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useFinancialStore } from '../store/useFinancialStore';
 import { X, Calendar as CalendarIcon, Clock, Users, Video, FileText, Trash2, AlertCircle } from 'lucide-react';
 import { getTodayString } from '../utils/formatters';
 
-export const ModalCalendarEvent = ({ isOpen, onClose, eventToEdit = null, defaultDate = null }) => {
+export const ModalCalendarEvent = ({ isOpen, onClose, eventToEdit = null, defaultDate = null, onEventSaved = null }) => {
   const addCalendarEvent = useFinancialStore((state) => state.addCalendarEvent);
   const updateCalendarEvent = useFinancialStore((state) => state.updateCalendarEvent);
   const deleteCalendarEvent = useFinancialStore((state) => state.deleteCalendarEvent);
   const clients = useFinancialStore((state) => state.clients);
 
-  const [titulo, setTitulo] = useState(eventToEdit?.titulo || '');
-  const [fecha, setFecha] = useState(eventToEdit?.fecha || defaultDate || getTodayString());
-  const [horaInicio, setHoraInicio] = useState(eventToEdit?.hora_inicio || '10:00');
-  const [horaFin, setHoraFin] = useState(eventToEdit?.hora_fin || '11:00');
-  const [tipo, setTipo] = useState(eventToEdit?.tipo || 'Cita con Cliente');
-  const [cliente, setCliente] = useState(eventToEdit?.cliente || '');
-  const [enlace, setEnlace] = useState(eventToEdit?.enlace || '');
-  const [notas, setNotas] = useState(eventToEdit?.notas || '');
+  const [titulo, setTitulo] = useState('');
+  const [fecha, setFecha] = useState(getTodayString());
+  const [horaInicio, setHoraInicio] = useState('10:00');
+  const [horaFin, setHoraFin] = useState('11:00');
+  const [tipo, setTipo] = useState('Cita con Cliente');
+  const [cliente, setCliente] = useState('');
+  const [enlace, setEnlace] = useState('');
+  const [notas, setNotas] = useState('');
   const [error, setError] = useState('');
+
+  // Sincronizar inmediatamente al abrir el modal o cambiar de evento/fecha
+  useEffect(() => {
+    if (isOpen) {
+      setTitulo(eventToEdit?.titulo || '');
+      setFecha(eventToEdit?.fecha || defaultDate || getTodayString());
+      setHoraInicio(eventToEdit?.hora_inicio || '10:00');
+      setHoraFin(eventToEdit?.hora_fin || '11:00');
+      setTipo(eventToEdit?.tipo || 'Cita con Cliente');
+      setCliente(eventToEdit?.cliente || '');
+      setEnlace(eventToEdit?.enlace || '');
+      setNotas(eventToEdit?.notas || '');
+      setError('');
+    }
+  }, [isOpen, eventToEdit, defaultDate]);
 
   if (!isOpen) return null;
 
@@ -32,39 +47,56 @@ export const ModalCalendarEvent = ({ isOpen, onClose, eventToEdit = null, defaul
       return;
     }
 
+    let savedEvent = null;
     if (eventToEdit) {
       updateCalendarEvent(eventToEdit.id, {
-        titulo,
+        titulo: titulo.trim(),
         fecha,
         hora_inicio: horaInicio,
         hora_fin: horaFin,
         tipo,
-        cliente,
-        enlace,
-        notas,
+        cliente: cliente.trim(),
+        enlace: enlace.trim(),
+        notas: notas.trim(),
       });
-    } else {
-      addCalendarEvent({
-        titulo,
+      savedEvent = {
+        ...eventToEdit,
+        titulo: titulo.trim(),
         fecha,
         hora_inicio: horaInicio,
         hora_fin: horaFin,
         tipo,
-        cliente,
-        enlace,
-        notas,
+        cliente: cliente.trim(),
+        enlace: enlace.trim(),
+        notas: notas.trim(),
+      };
+    } else {
+      savedEvent = addCalendarEvent({
+        titulo: titulo.trim(),
+        fecha,
+        hora_inicio: horaInicio,
+        hora_fin: horaFin,
+        tipo,
+        cliente: cliente.trim(),
+        enlace: enlace.trim(),
+        notas: notas.trim(),
       });
     }
 
-    setTitulo('');
-    setNotas('');
+    if (onEventSaved && savedEvent) {
+      onEventSaved(savedEvent);
+    }
+
     setError('');
     onClose();
   };
 
   const handleDelete = () => {
-    if (eventToEdit && window.confirm(`¿Eliminar la cita "${eventToEdit.titulo}"?`)) {
+    if (eventToEdit) {
       deleteCalendarEvent(eventToEdit.id);
+      if (onEventSaved) {
+        onEventSaved({ deleted: true, id: eventToEdit.id, fecha: eventToEdit.fecha });
+      }
       onClose();
     }
   };

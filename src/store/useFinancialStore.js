@@ -163,9 +163,21 @@ export const useFinancialStore = create(
       // --- SISTEMA DE CALENDARIO / CITAS & RECORDATORIOS ---
       calendarEvents: [
         {
+          id: 'cal-3',
+          titulo: 'Renovación de Servidor AWS Lemus Studio',
+          fecha: '2026-11-03',
+          hora_inicio: '09:00',
+          hora_fin: '09:30',
+          tipo: 'Recordatorio',
+          cliente: 'Interno',
+          enlace: '',
+          notas: 'Verificar cobro automático de la tarjeta BAC Credomatic',
+          completado: false,
+        },
+        {
           id: 'cal-1',
           titulo: 'Reunión de Avance & Demo Fase 1',
-          fecha: '2026-10-30',
+          fecha: '2026-11-04',
           hora_inicio: '10:00',
           hora_fin: '11:30',
           tipo: 'Reunión Virtual',
@@ -177,25 +189,13 @@ export const useFinancialStore = create(
         {
           id: 'cal-2',
           titulo: 'Llamada de Requerimientos E-commerce',
-          fecha: '2026-10-31',
+          fecha: '2026-11-06',
           hora_inicio: '15:00',
           hora_fin: '16:00',
           tipo: 'Cita con Cliente',
           cliente: 'Hospital Los Arcos',
           enlace: '',
           notas: 'Definir pasarela de pago y catálogo de servicios médicos',
-          completado: false,
-        },
-        {
-          id: 'cal-3',
-          titulo: 'Renovación de Servidor AWS Lemus Studio',
-          fecha: '2026-11-05',
-          hora_inicio: '09:00',
-          hora_fin: '09:30',
-          tipo: 'Recordatorio',
-          cliente: 'Interno',
-          enlace: '',
-          notas: 'Verificar cobro automático de la tarjeta BAC Credomatic',
           completado: false,
         }
       ],
@@ -487,8 +487,8 @@ export const useFinancialStore = create(
       }
     }),
     {
-      name: 'lemus_studio_finance_v5', // Versión 5 con datos reales de Image 2 y estilo Bento iDraft
-      version: 5,
+      name: 'lemus_studio_finance_v6', // Versión 6 con fechas de calendario sincronizadas a tiempo real
+      version: 6,
     }
   )
 );

@@ -244,6 +244,11 @@ export default function App() {
         onClose={() => setModalCalOpen(false)}
         eventToEdit={selectedEventToEdit}
         defaultDate={calendarDefaultDate}
+        onEventSaved={(savedEvt) => {
+          if (savedEvt?.fecha) {
+            setCalendarDefaultDate(savedEvt.fecha);
+          }
+        }}
       />
 
       {/* MARCO PRINCIPAL VIDRIO FROSTED (ESTILO iDraft BENTO) */}
@@ -683,12 +688,8 @@ export default function App() {
               {/* FILA MEDIA: METAS & APUNTES + MOVIMIENTOS EN PROCESO + CALENDARIO RECORDATORIOS */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-5">
                 
-                {/* 1. OBJETIVOS DEL MES & BLOC DE APUNTES (¡AL DARLE CLICK SE ABRE EL EDITOR!) */}
-                <div
-                  className="lg:col-span-4 idraft-card-white p-6 flex flex-col justify-between cursor-pointer group hover:border-black/30 transition-all"
-                  onClick={() => setModalNotesOpen(true)}
-                  title="Haz clic para abrir el bloc de apuntes y editar tus metas"
-                >
+                {/* 1. OBJETIVOS DEL MES & BLOC DE APUNTES (¡LISTA CON SCROLL PARA TACHAR DIRECTO!) */}
+                <div className="lg:col-span-4 idraft-card-white p-6 flex flex-col justify-between group hover:border-black/30 transition-all">
                   <div>
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2">
@@ -697,54 +698,71 @@ export default function App() {
                           {monthGoals.filter(g => g.completed).length}/{monthGoals.length}
                         </span>
                       </div>
-                      <div className="flex items-center gap-1.5 text-neutral-400 group-hover:text-black transition">
+                      <button
+                        onClick={() => setModalNotesOpen(true)}
+                        className="p-1.5 rounded-lg text-neutral-400 hover:text-black hover:bg-neutral-100 transition"
+                        title="Editar lista completa y apuntes"
+                      >
                         <Edit3 className="w-3.5 h-3.5" />
-                      </div>
+                      </button>
                     </div>
 
-                    {/* Checklist interactivo */}
-                    <div className="space-y-2.5">
-                      {monthGoals.slice(0, 3).map((goal) => (
-                        <div
-                          key={goal.id}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleMonthGoal(goal.id);
-                          }}
-                          className="flex items-start gap-2.5 cursor-pointer select-none"
-                        >
-                          <div className="mt-0.5 text-neutral-900 transition transform hover:scale-110 shrink-0">
-                            {goal.completed ? (
-                              <CheckCircle2 className="w-4 h-4 fill-black text-white" />
-                            ) : (
-                              <Circle className="w-4 h-4 text-neutral-300 hover:text-neutral-500" />
-                            )}
-                          </div>
-                          <span
-                            className={`text-xs leading-snug line-clamp-1 ${
-                              goal.completed
-                                ? 'line-through text-neutral-400 font-normal'
-                                : 'text-neutral-800 font-medium'
-                            }`}
-                          >
-                            {goal.text}
-                          </span>
+                    {/* Checklist interactivo con scroll suave para ir bajando si hay muchas tareas */}
+                    <div className="max-h-[170px] overflow-y-auto pr-1.5 space-y-2.5">
+                      {monthGoals.length === 0 ? (
+                        <div className="py-4 text-center text-xs text-neutral-400">
+                          No tienes objetivos creados este mes.
                         </div>
-                      ))}
+                      ) : (
+                        monthGoals.map((goal) => (
+                          <div
+                            key={goal.id}
+                            onClick={() => toggleMonthGoal(goal.id)}
+                            className="flex items-start gap-2.5 p-1.5 rounded-xl hover:bg-neutral-50 transition cursor-pointer select-none group/item"
+                            title="Haz clic para marcar/desmarcar"
+                          >
+                            <div className="mt-0.5 text-neutral-900 transition transform group-hover/item:scale-110 shrink-0">
+                              {goal.completed ? (
+                                <CheckCircle2 className="w-4 h-4 fill-black text-white" />
+                              ) : (
+                                <Circle className="w-4 h-4 text-neutral-300 group-hover/item:text-neutral-700" />
+                              )}
+                            </div>
+                            <span
+                              className={`text-xs leading-snug break-words flex-1 transition-colors ${
+                                goal.completed
+                                  ? 'line-through text-neutral-400 font-normal'
+                                  : 'text-neutral-800 font-medium'
+                              }`}
+                            >
+                              {goal.text}
+                            </span>
+                          </div>
+                        ))
+                      )}
                     </div>
 
-                    {/* Vista previa de apuntes */}
+                    {/* Vista previa de apuntes (clic para abrir bloc) */}
                     {monthNotes && (
-                      <div className="mt-3.5 p-3 rounded-2xl bg-neutral-50 border border-neutral-100 text-[11px] text-neutral-600 line-clamp-2 italic">
+                      <div
+                        onClick={() => setModalNotesOpen(true)}
+                        className="mt-3.5 p-3 rounded-2xl bg-neutral-50 hover:bg-neutral-100/80 border border-neutral-100 text-[11px] text-neutral-600 line-clamp-2 italic cursor-pointer transition"
+                        title="Haz clic para editar apuntes"
+                      >
                         📝 "{monthNotes.split('\n')[0]}"
                       </div>
                     )}
                   </div>
 
                   {/* Botón directo para abrir y escribir */}
-                  <div className="pt-3 mt-3 border-t border-neutral-100 flex items-center justify-between text-[11px]">
-                    <span className="text-neutral-400 font-medium">Click para escribir</span>
-                    <span className="font-bold text-neutral-900 flex items-center gap-1">
+                  <div
+                    onClick={() => setModalNotesOpen(true)}
+                    className="pt-3 mt-3 border-t border-neutral-100 flex items-center justify-between text-[11px] cursor-pointer group/btn"
+                  >
+                    <span className="text-neutral-400 font-medium group-hover/btn:text-neutral-700 transition">
+                      Click para escribir
+                    </span>
+                    <span className="font-bold text-neutral-900 flex items-center gap-1 group-hover/btn:underline">
                       <span>Abrir Bloc</span>
                       <Edit3 className="w-3 h-3" />
                     </span>
@@ -854,12 +872,22 @@ export default function App() {
                         {upcomingEvents.map((evt) => (
                           <div
                             key={evt.id}
-                            className="p-3 rounded-2xl border border-neutral-100 bg-neutral-50 hover:bg-white transition flex items-center justify-between gap-2.5"
+                            onClick={() => {
+                              setSelectedEventToEdit(evt);
+                              setCalendarDefaultDate(evt.fecha);
+                              setModalCalOpen(true);
+                            }}
+                            className="p-3 rounded-2xl border border-neutral-100 bg-neutral-50 hover:bg-white hover:shadow-sm transition flex items-center justify-between gap-2.5 cursor-pointer group"
+                            title="Haz clic para ver o editar cita"
                           >
                             <div className="flex items-center gap-2.5 min-w-0">
                               <button
-                                onClick={() => toggleEventCompleted(evt.id)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleEventCompleted(evt.id);
+                                }}
                                 className="text-neutral-900 transition shrink-0"
+                                title="Marcar como completada"
                               >
                                 {evt.completado ? (
                                   <CheckCircle2 className="w-3.5 h-3.5 fill-black text-white" />
@@ -868,12 +896,12 @@ export default function App() {
                                 )}
                               </button>
                               <div className="min-w-0">
-                                <span className="text-xs font-bold text-neutral-900 block truncate">
+                                <span className="text-xs font-bold text-neutral-900 block truncate group-hover:text-black">
                                   {evt.titulo}
                                 </span>
                                 <span className="text-[10px] text-neutral-400 flex items-center gap-1">
                                   <Clock className="w-2.5 h-2.5" />
-                                  {evt.hora_inicio || 'Horario'} • {evt.cliente || 'Interno'}
+                                  {evt.hora_inicio || 'Horario'} • {evt.cliente || 'Interno'} • {formatDate(evt.fecha)}
                                 </span>
                               </div>
                             </div>
@@ -883,6 +911,7 @@ export default function App() {
                                 href={evt.enlace}
                                 target="_blank"
                                 rel="noreferrer"
+                                onClick={(e) => e.stopPropagation()}
                                 className="p-1.5 rounded-lg bg-black text-white hover:bg-neutral-800 transition shrink-0"
                                 title="Unirse a reunión"
                               >
@@ -898,7 +927,11 @@ export default function App() {
                   <div className="pt-3 border-t border-neutral-100 flex items-center justify-between">
                     <span className="text-[11px] text-neutral-400">Hoy: {formatDate(new Date().toISOString().split('T')[0])}</span>
                     <button
-                      onClick={() => { setSelectedEventToEdit(null); setModalCalOpen(true); }}
+                      onClick={() => {
+                        setSelectedEventToEdit(null);
+                        setCalendarDefaultDate(new Date().toISOString().split('T')[0]);
+                        setModalCalOpen(true);
+                      }}
                       className="text-[11px] font-bold text-neutral-900 hover:underline flex items-center gap-1"
                     >
                       <Plus className="w-3 h-3" />
@@ -909,81 +942,128 @@ export default function App() {
 
               </div>
 
-              {/* FILA INFERIOR: ÚLTIMOS PROYECTOS & PORTAFOLIO (100% FUNCIONALES) */}
+              {/* FILA INFERIOR: ÚLTIMOS PROYECTOS & PORTAFOLIO (100% DINÁMICOS Y REACTIVOS) */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between px-1">
                   <h3 className="text-sm font-bold text-neutral-900 font-display">
                     Últimos Proyectos & Portafolio
                   </h3>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-neutral-400">Ordenar por</span>
-                    <button className="flex items-center gap-1 text-xs font-semibold text-neutral-700 bg-white px-2.5 py-1 rounded-xl border border-neutral-200">
-                      <span>Recientes</span>
-                      <ChevronDown className="w-3 h-3" />
+                    <button
+                      onClick={() => setActiveTab('proyectos')}
+                      className="text-xs font-semibold text-neutral-500 hover:text-black transition"
+                    >
+                      Ver todos los proyectos →
                     </button>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  {/* Proyecto 1: Inmobiliaria Santander (Clic para editar progreso) */}
-                  <div
-                    onClick={() => {
-                      setSelectedProject(projects[0] || null);
-                      setModalEditProgOpen(true);
-                    }}
-                    className="bg-[#141414] text-white p-5 rounded-[24px] flex flex-col justify-between shadow-md hover:shadow-xl transition cursor-pointer group"
-                    title="Haz clic para ajustar el progreso"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-white group-hover:underline">Inmobiliaria Santander</span>
-                      <span className="w-6 h-6 rounded-full bg-neutral-800 text-neutral-300 flex items-center justify-center text-[10px] font-bold">
-                        50%
-                      </span>
-                    </div>
-                    <div className="my-3">
-                      <div className="flex items-center gap-1.5 text-[11px] text-emerald-400 mb-1">
-                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                        <span>En progreso</span>
+                  {/* Proyecto 1: Proyecto Activo Dinámico (Sin verde feo, reactivo a cambios de progreso en tiempo real) */}
+                  {projects.length > 0 ? (
+                    <div
+                      onClick={() => {
+                        setSelectedProject(projects[0]);
+                        setModalEditProgOpen(true);
+                      }}
+                      className="bg-[#141414] text-white p-5 rounded-[24px] flex flex-col justify-between shadow-md hover:shadow-xl transition cursor-pointer group border border-neutral-800/80 hover:border-neutral-600"
+                      title="Haz clic para ajustar el progreso y estado"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-white group-hover:underline truncate max-w-[190px]">
+                          {projects[0].nombre}
+                        </span>
+                        <span className="w-7 h-7 rounded-full bg-neutral-800 text-white flex items-center justify-center text-[10px] font-bold font-numeric border border-neutral-700">
+                          {projects[0].progreso}%
+                        </span>
                       </div>
-                      <p className="text-[11px] text-neutral-400 leading-snug line-clamp-2">
-                        Página Web Corporativa • Anticipo Q900 cobrado exitosamente.
-                      </p>
+                      <div className="my-3">
+                        {/* Estado en puro blanco y negro: sin color verde feo */}
+                        <div className="flex items-center gap-1.5 text-[11px] text-neutral-200 mb-1">
+                          <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+                          <span className="font-semibold">{projects[0].estado || 'En progreso'}</span>
+                        </div>
+                        <p className="text-[11px] text-neutral-400 leading-snug line-clamp-2">
+                          {projects[0].cliente ? `${projects[0].cliente} • ` : ''}
+                          {projects[0].presupuesto ? `Presupuesto: ${formatGTQ(projects[0].presupuesto)}` : (projects[0].tecnologia || 'Lemus Studio')}
+                        </p>
+                      </div>
+                      <div>
+                        <div className="flex justify-between items-center text-[10px] text-neutral-400 mb-1">
+                          <span>Progreso de Entrega</span>
+                          <span className="font-mono text-white font-bold">{projects[0].progreso}%</span>
+                        </div>
+                        <div className="w-full bg-neutral-800 h-1.5 rounded-full overflow-hidden">
+                          <div
+                            className="bg-white h-full rounded-full transition-all duration-500 ease-out"
+                            style={{ width: `${Math.min(100, Math.max(0, projects[0].progreso || 0))}%` }}
+                          />
+                        </div>
+                      </div>
                     </div>
-                    <div className="w-full bg-neutral-800 h-1.5 rounded-full overflow-hidden">
-                      <div className="bg-white h-full rounded-full w-1/2" />
+                  ) : (
+                    <div
+                      onClick={() => setModalProjOpen(true)}
+                      className="bg-[#141414] text-white p-5 rounded-[24px] flex flex-col items-center justify-center text-center shadow-md border border-neutral-800 cursor-pointer hover:border-neutral-600 transition"
+                    >
+                      <Plus className="w-6 h-6 text-neutral-400 mb-1" />
+                      <span className="text-xs font-bold text-white">+ Nuevo Proyecto</span>
+                      <span className="text-[11px] text-neutral-500">Haz clic para crear tu primer proyecto</span>
                     </div>
-                  </div>
+                  )}
 
-                  {/* Proyecto 2: Portal Inmobiliario Santander (Clic para visitar) */}
-                  <div className="bg-[#141414] text-white p-5 rounded-[24px] flex flex-col justify-between shadow-md hover:shadow-xl transition">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-white">Portal Santander Inmuebles</span>
-                      <span className="w-6 h-6 rounded-full bg-neutral-800 text-neutral-300 flex items-center justify-center text-[10px] font-bold">
-                        1/1
-                      </span>
-                    </div>
-                    <div className="my-3">
-                      <div className="flex items-center gap-1.5 text-[11px] text-neutral-300 mb-1">
-                        <span className="w-2 h-2 rounded-full bg-white" />
-                        <span>Web Reciclable</span>
+                  {/* Proyecto 2: Último Sitio Web del Catálogo Dinámico */}
+                  {websites.length > 0 ? (
+                    <div
+                      onClick={() => setActiveTab('websites')}
+                      className="bg-[#141414] text-white p-5 rounded-[24px] flex flex-col justify-between shadow-md hover:shadow-xl transition cursor-pointer border border-neutral-800/80 hover:border-neutral-600 group"
+                      title="Haz clic para ver catálogo de webs"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-white group-hover:underline truncate max-w-[190px]">
+                          {websites[0].titulo}
+                        </span>
+                        <span className="px-2 py-0.5 rounded-full bg-neutral-800 text-neutral-300 font-mono text-[10px] font-bold border border-neutral-700">
+                          1/{websites.length}
+                        </span>
                       </div>
-                      <p className="text-[11px] text-neutral-400 leading-snug line-clamp-2">
-                        Buscador con filtros y mapa interactivo listo para reutilizar.
-                      </p>
+                      <div className="my-3">
+                        <div className="flex items-center gap-1.5 text-[11px] text-neutral-200 mb-1">
+                          <span className="w-2 h-2 rounded-full bg-white" />
+                          <span className="font-semibold">{websites[0].categoria || 'Web Reciclable'}</span>
+                        </div>
+                        <p className="text-[11px] text-neutral-400 leading-snug line-clamp-2">
+                          {websites[0].descripcion || websites[0].cliente || 'Buscador de componentes listo para reutilizar.'}
+                        </p>
+                      </div>
+                      <div className="flex items-center justify-between text-[10px] text-neutral-400 pt-2 border-t border-neutral-800">
+                        <span className="truncate max-w-[140px]">{websites[0].cliente || 'Lemus Studio'}</span>
+                        {websites[0].url ? (
+                          <a
+                            href={websites[0].url}
+                            target="_blank"
+                            rel="noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="text-white hover:underline flex items-center gap-1 font-semibold"
+                          >
+                            <span>Visitar</span>
+                            <ExternalLink className="w-2.5 h-2.5" />
+                          </a>
+                        ) : (
+                          <span className="text-neutral-500">Sin URL</span>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex items-center justify-between text-[10px] text-neutral-400 pt-1 border-t border-neutral-800">
-                      <span>Categoría: Inmobiliaria</span>
-                      <a
-                        href="https://santander-inmuebles.gt"
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-white hover:underline flex items-center gap-1"
-                      >
-                        <span>Visitar</span>
-                        <ExternalLink className="w-2.5 h-2.5" />
-                      </a>
+                  ) : (
+                    <div
+                      onClick={() => setActiveTab('websites')}
+                      className="bg-[#141414] text-white p-5 rounded-[24px] flex flex-col items-center justify-center text-center shadow-md border border-neutral-800 cursor-pointer hover:border-neutral-600 transition"
+                    >
+                      <Globe className="w-6 h-6 text-neutral-400 mb-1" />
+                      <span className="text-xs font-bold text-white">+ Catálogo Web</span>
+                      <span className="text-[11px] text-neutral-500">Agrega páginas para reutilizar componentes</span>
                     </div>
-                  </div>
+                  )}
 
                   {/* Proyecto 3: Tarjeta BAC Credomatic Card (Clic para registrar movimiento) */}
                   <div
@@ -1132,14 +1212,16 @@ export default function App() {
           {activeTab === 'calendario' && (
             <div className="animate-fadeIn">
               <CalendarView
+                activeDate={calendarDefaultDate}
+                onDateChange={(d) => setCalendarDefaultDate(d)}
                 onOpenAddModal={(date) => {
-                  setCalendarDefaultDate(date);
+                  setCalendarDefaultDate(date || calendarDefaultDate || new Date().toISOString().split('T')[0]);
                   setSelectedEventToEdit(null);
                   setModalCalOpen(true);
                 }}
                 onOpenEditModal={(evt) => {
                   setSelectedEventToEdit(evt);
-                  setCalendarDefaultDate(null);
+                  setCalendarDefaultDate(evt.fecha);
                   setModalCalOpen(true);
                 }}
               />
